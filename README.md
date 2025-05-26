@@ -2,6 +2,9 @@
 
 A new Flutter project.
 
+# Figma
+https://www.figma.com/design/ckug88jnL2Gzyy5f4Dnm3Z/UI-Artikel-Berita?node-id=0-1&t=afvbXlZm1tfIYzZH-1
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
