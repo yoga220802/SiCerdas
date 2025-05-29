@@ -14,7 +14,8 @@ class CustomButton extends StatelessWidget {
   final double height;
   final Widget? leadingIcon;
   final Widget? trailingIcon;
-  final Color? customColor; // Untuk override warna default per type
+  final Color? customBackgroundColor; // Untuk override warna background default per type
+  final Color? customOutlineColor; // Untuk override warna outline default per type
   final Color? customTextColor; // Untuk override warna teks default per type
 
   const CustomButton({
@@ -27,7 +28,8 @@ class CustomButton extends StatelessWidget {
     this.height = 48.0,
     this.leadingIcon,
     this.trailingIcon,
-    this.customColor,
+    this.customBackgroundColor,
+    this.customOutlineColor,
     this.customTextColor,
   });
 
@@ -39,7 +41,8 @@ class CustomButton extends StatelessWidget {
     // Menentukan style berdasarkan tipe tombol
     ButtonStyle? specificStyle;
     Color? foregroundColor = customTextColor;
-    Color? backgroundColor = customColor;
+    Color? backgroundColor = customBackgroundColor;
+    Color? outlineColor = customOutlineColor;
 
     switch (type) {
       case ButtonType.primary:
@@ -51,8 +54,8 @@ class CustomButton extends StatelessWidget {
         specificStyle = ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          disabledBackgroundColor: (backgroundColor ?? AppColors.primary).withValues(alpha: .5),
-          disabledForegroundColor: (foregroundColor ?? AppColors.white).withValues(alpha: .7),
+          disabledBackgroundColor: (backgroundColor).withValues(alpha: .5),
+          disabledForegroundColor: (foregroundColor).withValues(alpha: .7),
           minimumSize: Size(width ?? 64, height),
           padding: EdgeInsets.symmetric(
             horizontal: (leadingIcon != null || trailingIcon != null) ? 16 : 24,
@@ -77,15 +80,16 @@ class CustomButton extends StatelessWidget {
         );
         break;
       case ButtonType.outline:
-        foregroundColor ??= customColor ?? AppColors.primary; // Warna teks sama dengan border
+        foregroundColor ??= customTextColor ?? AppColors.primary; // Warna teks sama dengan border
+        outlineColor ??= customOutlineColor ?? AppColors.primary;
         backgroundColor ??= Colors.transparent;
         specificStyle = ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
           elevation: 0,
-          side: BorderSide(color: foregroundColor ?? AppColors.primary, width: 1.5),
+          side: BorderSide(color: outlineColor, width: 1.5),
           disabledBackgroundColor: Colors.transparent,
-          disabledForegroundColor: (foregroundColor ?? AppColors.primary).withValues(alpha: .5),
+          disabledForegroundColor: (foregroundColor).withValues(alpha: .5),
           minimumSize: Size(width ?? 64, height),
           padding: EdgeInsets.symmetric(
             horizontal: (leadingIcon != null || trailingIcon != null) ? 16 : 24,
@@ -96,7 +100,7 @@ class CustomButton extends StatelessWidget {
       case ButtonType.text:
         // Menggunakan style dari TextButtonTheme jika tidak ada override
         foregroundColor ??=
-            customColor ??
+            customTextColor ??
             theme.textButtonTheme.style?.foregroundColor?.resolve({}) ??
             AppColors.primary;
         specificStyle = TextButton.styleFrom(
@@ -114,7 +118,7 @@ class CustomButton extends StatelessWidget {
           child: TextButton(
             onPressed: isDisabled ? null : onPressed,
             style: specificStyle,
-            child: _buildButtonChild(context, foregroundColor ?? AppColors.primary),
+            child: _buildButtonChild(context, foregroundColor),
           ),
         );
     }
@@ -125,7 +129,7 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: specificStyle,
-        child: _buildButtonChild(context, foregroundColor ?? AppColors.white),
+        child: _buildButtonChild(context, foregroundColor),
       ),
     );
   }
