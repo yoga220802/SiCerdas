@@ -275,15 +275,24 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label, VoidCallback onPressed) {
-    return CustomButton(
-      text: '',
-      onPressed: _authController.isLoading ? null : onPressed,
-      type: ButtonType.outline,
-      customOutlineColor: AppColors.textBlack,
-      leadingIcon: Icon(icon, size: 15),
-      width: 55,
-      height: 55,
+  Widget _buildSocialButton(
+    IconData icon,
+    String label,
+    VoidCallback onPressed, {
+    bool isRegister = false,
+  }) {
+    return GestureDetector(
+      onTap: _authController.isLoading ? null : onPressed,
+      child: Container(
+        width: 55,
+        height: 55,
+        decoration: BoxDecoration(
+          color: isRegister ? AppColors.secondary : AppColors.white,
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+        ),
+        child: Icon(icon, size: 24, color: isRegister ? AppColors.white : AppColors.secondary),
+      ),
     );
   }
 
