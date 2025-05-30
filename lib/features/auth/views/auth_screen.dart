@@ -170,65 +170,67 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       child: Consumer<AuthController>(
         builder: (context, controller, child) {
           return Scaffold(
-            resizeToAvoidBottomInset: false, // STRATEGI 1: Mencegah Scaffold resize
+            resizeToAvoidBottomInset: false,
             backgroundColor: AppColors.secondary,
-            body: Stack(
-              children: [
-                // Konten Login (di belakang sheet)
-                AnimatedBuilder(
-                  animation: _fadeAnimation,
-                  builder: (context, child) => Opacity(opacity: _fadeAnimation.value, child: child),
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(bottom: _isRegisterSheetVisible ? 0 : 80.0),
-                    child: SizedBox(
-                      height: size.height,
-                      child: Padding(
-                        padding: AppSpacing.hPaddingLarge,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Spacer(flex: 1),
-                            const Icon(
-                              Icons.account_circle_outlined,
-                              size: 50,
-                              color: AppColors.textBlack,
-                            ),
-                            AppSpacing.vsMedium,
-                            Text(
-                              'Masuk Disini!',
-                              style: AppTypography.headlineSmall.copyWith(
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  AnimatedBuilder(
+                    animation: _fadeAnimation,
+                    builder:
+                        (context, child) => Opacity(opacity: _fadeAnimation.value, child: child),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(bottom: _isRegisterSheetVisible ? 0 : 80.0),
+                      child: SizedBox(
+                        height: size.height,
+                        child: Padding(
+                          padding: AppSpacing.hPaddingLarge,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Spacer(flex: 1),
+                              const Icon(
+                                Icons.account_circle_outlined,
+                                size: 50,
                                 color: AppColors.textBlack,
                               ),
-                            ),
-                            AppSpacing.vsSmall,
-                            Text(
-                              'Nikmati pengalaman membaca berita dengan login yang cepat dan terlindungi',
-                              textAlign: TextAlign.center,
-                              style: AppTypography.bodyMedium.copyWith(color: AppColors.textGrey),
-                            ),
-                            AppSpacing.vsLarge,
-                            LoginForm(
-                              emailController: _loginEmailController,
-                              passwordController: _loginPasswordController,
-                              emailFocusNode: _loginEmailFocus, // STRATEGI 2: Kirim FocusNode
-                              passwordFocusNode: _loginPasswordFocus, // STRATEGI 2: Kirim FocusNode
-                              onLoginPressed: _handleLogin,
-                              onForgotPasswordPressed: _navigateToForgotPassword,
-                              isLoading: controller.isLoading,
-                            ),
-                            AppSpacing.vsMedium,
-                            _buildRegisterLink(),
-                            AppSpacing.vsLarge,
-                            _buildSocialLoginButtons(),
-                            const Spacer(flex: 2),
-                          ],
+                              AppSpacing.vsMedium,
+                              Text(
+                                'Masuk Disini!',
+                                style: AppTypography.headlineSmall.copyWith(
+                                  color: AppColors.textBlack,
+                                ),
+                              ),
+                              AppSpacing.vsSmall,
+                              Text(
+                                'Nikmati pengalaman membaca berita dengan login yang cepat dan terlindungi',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.bodyMedium.copyWith(color: AppColors.textGrey),
+                              ),
+                              AppSpacing.vsLarge,
+                              LoginForm(
+                                emailController: _loginEmailController,
+                                passwordController: _loginPasswordController,
+                                emailFocusNode: _loginEmailFocus,
+                                passwordFocusNode: _loginPasswordFocus,
+                                onLoginPressed: _handleLogin,
+                                onForgotPasswordPressed: _navigateToForgotPassword,
+                                isLoading: controller.isLoading,
+                              ),
+                              AppSpacing.vsMedium,
+                              _buildRegisterLink(),
+                              AppSpacing.vsLarge,
+                              _buildSocialLoginButtons(),
+                              const Spacer(flex: 2),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                _buildRegisterSheet(controller.isLoading),
-              ],
+                  _buildRegisterSheet(controller.isLoading),
+                ],
+              ),
             ),
           );
         },
@@ -336,13 +338,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             emailController: _registerEmailController,
                             passwordController: _registerPasswordController,
                             confirmPasswordController: _registerConfirmPasswordController,
-                            usernameFocusNode:
-                                _registerUsernameFocus, // STRATEGI 2: Kirim FocusNode
-                            emailFocusNode: _registerEmailFocus, // STRATEGI 2: Kirim FocusNode
-                            passwordFocusNode:
-                                _registerPasswordFocus, // STRATEGI 2: Kirim FocusNode
-                            confirmPasswordFocusNode:
-                                _registerConfirmPasswordFocus, // STRATEGI 2: Kirim FocusNode
+                            usernameFocusNode: _registerUsernameFocus,
+                            emailFocusNode: _registerEmailFocus,
+                            passwordFocusNode: _registerPasswordFocus,
+                            confirmPasswordFocusNode: _registerConfirmPasswordFocus,
                             onRegisterPressed: _handleRegister,
                             isLoading: isLoading,
                           )
