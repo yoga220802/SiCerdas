@@ -281,9 +281,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       onPressed: _authController.isLoading ? null : onPressed,
       type: ButtonType.outline,
       customOutlineColor: AppColors.textBlack,
-      leadingIcon: Icon(icon, size: 20),
-      width: 60,
-      height: 60,
+      leadingIcon: Icon(icon, size: 15),
+      width: 55,
+      height: 55,
     );
   }
 

@@ -5,15 +5,15 @@ import 'package:project_sicerdas/app/theme/app_typography.dart';
 import 'package:project_sicerdas/app/widgets/custom_button.dart';
 import 'package:project_sicerdas/app/widgets/custom_text_field.dart';
 
-class RegisterForm extends StatelessWidget {
+class RegisterForm extends StatefulWidget {
   final TextEditingController usernameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
-  final FocusNode? usernameFocusNode; // Tambahkan FocusNode
-  final FocusNode? emailFocusNode; // Tambahkan FocusNode
-  final FocusNode? passwordFocusNode; // Tambahkan FocusNode
-  final FocusNode? confirmPasswordFocusNode; // Tambahkan FocusNode
+  final FocusNode? usernameFocusNode;
+  final FocusNode? emailFocusNode;
+  final FocusNode? passwordFocusNode;
+  final FocusNode? confirmPasswordFocusNode;
   final VoidCallback onRegisterPressed;
   final bool isLoading;
 
@@ -23,23 +23,36 @@ class RegisterForm extends StatelessWidget {
     required this.emailController,
     required this.passwordController,
     required this.confirmPasswordController,
-    this.usernameFocusNode, // Jadikan opsional
-    this.emailFocusNode, // Jadikan opsional
-    this.passwordFocusNode, // Jadikan opsional
-    this.confirmPasswordFocusNode, // Jadikan opsional
+    this.usernameFocusNode,
+    this.emailFocusNode,
+    this.passwordFocusNode,
+    this.confirmPasswordFocusNode,
     required this.onRegisterPressed,
     this.isLoading = false,
   });
 
   @override
+  State<RegisterForm> createState() => _RegisterFormState();
+}
+
+// Menambahkan AutomaticKeepAliveClientMixin
+class _RegisterFormState extends State<RegisterForm> with AutomaticKeepAliveClientMixin {
+  final _formKey = GlobalKey<FormState>();
+
+  // Implementasi AutomaticKeepAliveClientMixin
+  @override
+  bool get wantKeepAlive => true; // Memberitahu Flutter untuk menjaga state widget ini
+
+  @override
   Widget build(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
+    super.build(context); // Penting untuk memanggil super.build(context)
 
     return Padding(
       padding: AppSpacing.aPaddingLarge,
       child: Form(
-        key: formKey,
+        key: _formKey,
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Agar Column tidak memakan space berlebih
           children: [
             const Icon(Icons.person_add_outlined, size: 50, color: AppColors.textBlack),
             AppSpacing.vsMedium,
@@ -64,8 +77,8 @@ class RegisterForm extends StatelessWidget {
             CustomTextField(
               title: 'Username',
               hintText: 'Masukkan username',
-              controller: usernameController,
-              focusNode: usernameFocusNode, // Gunakan FocusNode
+              controller: widget.usernameController,
+              focusNode: widget.usernameFocusNode,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Username tidak boleh kosong';
@@ -77,8 +90,8 @@ class RegisterForm extends StatelessWidget {
             CustomTextField(
               title: 'Email',
               hintText: 'sicerdas@example.com',
-              controller: emailController,
-              focusNode: emailFocusNode, // Gunakan FocusNode
+              controller: widget.emailController,
+              focusNode: widget.emailFocusNode,
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -94,8 +107,8 @@ class RegisterForm extends StatelessWidget {
             CustomTextField(
               title: 'Password',
               hintText: '••••••••••',
-              controller: passwordController,
-              focusNode: passwordFocusNode, // Gunakan FocusNode
+              controller: widget.passwordController,
+              focusNode: widget.passwordFocusNode,
               isPassword: true,
               obscureText: true,
               validator: (value) {
@@ -112,15 +125,16 @@ class RegisterForm extends StatelessWidget {
             CustomTextField(
               title: 'Konfirmasi Password',
               hintText: '••••••••••',
-              controller: confirmPasswordController,
-              focusNode: confirmPasswordFocusNode, // Gunakan FocusNode
+              controller: widget.confirmPasswordController,
+              focusNode: widget.confirmPasswordFocusNode,
               isPassword: true,
               obscureText: true,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Konfirmasi password tidak boleh kosong';
                 }
-                if (value != passwordController.text) {
+                if (value != widget.passwordController.text) {
+                  // Akses dari widget
                   return 'Password tidak cocok';
                 }
                 return null;
@@ -130,11 +144,13 @@ class RegisterForm extends StatelessWidget {
             CustomButton(
               text: 'Register',
               onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  onRegisterPressed();
+                // Unfocus semua field sebelum validasi dan aksi
+                FocusScope.of(context).unfocus();
+                if (_formKey.currentState!.validate()) {
+                  widget.onRegisterPressed();
                 }
               },
-              isLoading: isLoading,
+              isLoading: widget.isLoading,
               width: double.infinity,
               customBackgroundColor: AppColors.secondary,
               customTextColor: AppColors.white,

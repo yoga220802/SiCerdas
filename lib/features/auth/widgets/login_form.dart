@@ -5,11 +5,11 @@ import 'package:project_sicerdas/app/theme/app_typography.dart';
 import 'package:project_sicerdas/app/widgets/custom_button.dart';
 import 'package:project_sicerdas/app/widgets/custom_text_field.dart';
 
-class LoginForm extends StatelessWidget {
+class LoginForm extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
-  final FocusNode? emailFocusNode; // Tambahkan FocusNode
-  final FocusNode? passwordFocusNode; // Tambahkan FocusNode
+  final FocusNode? emailFocusNode;
+  final FocusNode? passwordFocusNode;
   final VoidCallback onLoginPressed;
   final VoidCallback onForgotPasswordPressed;
   final bool isLoading;
@@ -18,16 +18,27 @@ class LoginForm extends StatelessWidget {
     super.key,
     required this.emailController,
     required this.passwordController,
-    this.emailFocusNode, // Jadikan opsional
-    this.passwordFocusNode, // Jadikan opsional
+    this.emailFocusNode,
+    this.passwordFocusNode,
     required this.onLoginPressed,
     required this.onForgotPasswordPressed,
     this.isLoading = false,
   });
 
   @override
+  State<LoginForm> createState() => _LoginFormState();
+}
+
+// Menambahkan AutomaticKeepAliveClientMixin
+class _LoginFormState extends State<LoginForm> with AutomaticKeepAliveClientMixin {
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
+    super.build(context);
 
     return Container(
       padding: AppSpacing.aPaddingLarge,
@@ -43,8 +54,9 @@ class LoginForm extends StatelessWidget {
         ],
       ),
       child: Form(
-        key: formKey,
+        key: _formKey,
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Agar Column tidak memakan space berlebih
           children: [
             Image.asset(
               'assets/images/logo.png',
@@ -56,8 +68,8 @@ class LoginForm extends StatelessWidget {
             CustomTextField(
               title: 'Email',
               hintText: 'sicerdas@example.com',
-              controller: emailController,
-              focusNode: emailFocusNode, // Gunakan FocusNode
+              controller: widget.emailController, // Mengakses controller dari widget
+              focusNode: widget.emailFocusNode, // Mengakses focus node dari widget
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -73,8 +85,8 @@ class LoginForm extends StatelessWidget {
             CustomTextField(
               title: 'Password',
               hintText: '••••••••••',
-              controller: passwordController,
-              focusNode: passwordFocusNode, // Gunakan FocusNode
+              controller: widget.passwordController, // Mengakses controller dari widget
+              focusNode: widget.passwordFocusNode, // Mengakses focus node dari widget
               isPassword: true,
               obscureText: true,
               validator: (value) {
@@ -87,7 +99,7 @@ class LoginForm extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: isLoading ? null : onForgotPasswordPressed,
+                onPressed: widget.isLoading ? null : widget.onForgotPasswordPressed,
                 child: Text(
                   'Lupa password?',
                   style: AppTypography.bodySmall.copyWith(color: AppColors.textGrey),
@@ -98,11 +110,13 @@ class LoginForm extends StatelessWidget {
             CustomButton(
               text: 'Login',
               onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  onLoginPressed();
+                // Unfocus semua field sebelum validasi dan aksi
+                FocusScope.of(context).unfocus();
+                if (_formKey.currentState!.validate()) {
+                  widget.onLoginPressed();
                 }
               },
-              isLoading: isLoading,
+              isLoading: widget.isLoading,
               width: double.infinity,
             ),
           ],
