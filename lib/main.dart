@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:project_sicerdas/app/theme/app_theme.dart';
-import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
+import 'package:project_sicerdas/features/onboarding/view/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'SICERDAS',
       debugShowCheckedModeBanner: true,
       theme: AppTheme.lightTheme,
-      home: const AuthScreen(),
+      home: const SplashScreen(),
     );
   }
 }
