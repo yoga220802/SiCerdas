@@ -3,6 +3,7 @@ import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
 import 'package:project_sicerdas/app/widgets/custom_button.dart';
+import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
 
 class OnboardingData {
   final String image;
@@ -56,10 +57,10 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const AuthScreen()),
-      // );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+      );
     }
   }
 
