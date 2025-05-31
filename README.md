@@ -1,6 +1,8 @@
 # project_sicerdas
 
-A new Flutter project.
+Dhika Restu Fauzi `2206046`
+
+Yoga Agustiansyah `2206050`
 
 # Figma
 https://www.figma.com/design/ckug88jnL2Gzyy5f4Dnm3Z/UI-Artikel-Berita?node-id=0-1&t=afvbXlZm1tfIYzZH-1
