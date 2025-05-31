@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "675893502940",
+    "firebase_url": "https://sicerdas-22060xx-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "sicerdas-22060xx",
+    "storage_bucket": "sicerdas-22060xx.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675893502940:android:46167dc37c57b9b16e6519",
+        "android_client_info": {
+          "package_name": "com.example.project_sicerdas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "675893502940-0v70dsvi59t7d68ev9ck641hp6kohage.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0XLFeqHk-MclAQ7G5nqosflkP7WY2SWE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "675893502940-0v70dsvi59t7d68ev9ck641hp6kohage.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
