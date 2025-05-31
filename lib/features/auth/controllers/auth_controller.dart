@@ -1,106 +1,134 @@
 import 'package:flutter/material.dart';
-// TODO: Import Firebase Auth dan service terkait jika sudah dibuat
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:project_sicerdas/data/models/user_model.dart';
+import 'package:project_sicerdas/data/services/firebase_db_service.dart';
 
 class AuthController extends ChangeNotifier {
-  // Status loading untuk UI
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseDbProvider _dbProvider = FirebaseDbProvider();
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Pesan error untuk ditampilkan di UI
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // TODO: Tambahkan instance dari AuthService/AuthProvider
-  // final AuthService _authService = AuthService();
+  User? get currentUser => _auth.currentUser;
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Method untuk mengubah status loading dan memberi notifikasi ke listener
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  // Method untuk menetapkan pesan error dan memberi notifikasi
   void _setError(String? message) {
     _errorMessage = message;
-    notifyListeners();
+    // notifyListeners();
   }
 
-  // Fungsi untuk login
-  Future<void> loginUser({required String email, required String password}) async {
+  Future<bool> loginUser({required String email, required String password}) async {
     _setLoading(true);
-    _setError(null); // Bersihkan error sebelumnya
-
+    _setError(null);
+    bool success = false;
     try {
-      // TODO: Implementasi logika login dengan Firebase Auth
-      // Contoh: await _authService.signInWithEmailAndPassword(email, password);
-      await Future.delayed(const Duration(seconds: 2)); // Simulasi network call
-
-      if (email == "test@example.com" && password == "password") {
-        print("Login berhasil!");
-        // Navigasi atau tindakan lain setelah login berhasil
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      print("Login berhasil untuk: $email");
+      success = true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        _setError('User tidak ditemukan untuk email tersebut.');
+      } else if (e.code == 'wrong-password') {
+        _setError('Password salah.');
       } else {
-        throw Exception("Email atau password salah.");
+        _setError('Gagal login: ${e.message}');
       }
+      print("Login error: ${_errorMessage}");
     } catch (e) {
-      _setError(e.toString());
-      print("Login error: $e");
+      _setError('Terjadi kesalahan: ${e.toString()}');
+      print("Login error: ${_errorMessage}");
     } finally {
       _setLoading(false);
     }
+    return success;
   }
 
-  // Fungsi untuk register
-  Future<void> registerUser({
+  Future<bool> registerUser({
     required String username,
     required String email,
     required String password,
   }) async {
     _setLoading(true);
     _setError(null);
+    bool success = false;
 
     try {
-      // TODO: Implementasi logika register dengan Firebase Auth
-      // Contoh: await _authService.createUserWithEmailAndPassword(email, password);
-      // Setelah itu, simpan username ke Firestore atau Realtime Database jika perlu
-      await Future.delayed(const Duration(seconds: 2)); // Simulasi network call
-      print("Register berhasil untuk: $username, $email");
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user != null) {
+        // Update display name di Firebase Auth (jika diperlukan langsung)
+        // await userCredential.user!.updateDisplayName(username);
+        // await userCredential.user!.reload(); // Reload user untuk mendapatkan data terbaru
+
+        // Buat profil user di Realtime Database
+        final newUser = UserModel(
+          uid: userCredential.user!.uid,
+          email: email,
+          displayName: username,
+          createdAt: DateTime.now(),
+        );
+        await _dbProvider.createUserProfile(newUser);
+
+        print("Register berhasil untuk: $username, $email. Profil dibuat.");
+        success = true;
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        _setError('Password terlalu lemah.');
+      } else if (e.code == 'email-already-in-use') {
+        _setError('Email sudah digunakan oleh akun lain.');
+      } else {
+        _setError('Gagal register: ${e.message}');
+      }
+      print("Register error: ${_errorMessage}");
     } catch (e) {
-      _setError(e.toString());
-      print("Register error: $e");
+      _setError('Terjadi kesalahan: ${e.toString()}');
+      print("Register error: ${_errorMessage}");
     } finally {
       _setLoading(false);
     }
+    return success;
   }
 
-  // Fungsi untuk lupa password
-  Future<void> forgotPassword({required String email}) async {
+  Future<bool> forgotPassword({required String email}) async {
     _setLoading(true);
     _setError(null);
-
+    bool success = false;
     try {
-      // TODO: Implementasi logika lupa password dengan Firebase Auth
-      // Contoh: await _authService.sendPasswordResetEmail(email);
-      await Future.delayed(const Duration(seconds: 2)); // Simulasi network call
+      await _auth.sendPasswordResetEmail(email: email);
       print("Email reset password dikirim ke: $email");
+      success = true;
+    } on FirebaseAuthException catch (e) {
+      _setError('Gagal mengirim email reset: ${e.message}');
+      print("Forgot password error: ${_errorMessage}");
     } catch (e) {
-      _setError(e.toString());
-      print("Forgot password error: $e");
+      _setError('Terjadi kesalahan: ${e.toString()}');
+      print("Forgot password error: ${_errorMessage}");
     } finally {
       _setLoading(false);
     }
+    return success;
   }
 
-  // Fungsi untuk logout
   Future<void> logoutUser() async {
     _setLoading(true);
     try {
-      // TODO: Implementasi logika logout
-      // await _authService.signOut();
-      await Future.delayed(const Duration(seconds: 1));
+      await _auth.signOut();
       print("User logged out");
     } catch (e) {
       print("Logout error: $e");
-      // Tidak perlu set error di UI untuk logout biasanya
     } finally {
       _setLoading(false);
     }

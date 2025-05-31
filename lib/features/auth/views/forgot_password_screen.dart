@@ -19,39 +19,46 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isDialogVisible = false;
-  late AuthController _authController; // Instance AuthController
-
-  @override
-  void initState() {
-    super.initState();
-    // Inisialisasi AuthController. Idealnya di-provide dari atas jika sudah pakai Provider secara global
-    _authController = AuthController();
-  }
 
   void _showResetConfirmationDialog() {
-    setState(() => _isDialogVisible = true);
+    if (mounted) {
+      // Pastikan widget masih ada di tree
+      setState(() => _isDialogVisible = true);
+    }
   }
 
   void _hideResetConfirmationDialogAndGoBack() {
-    setState(() => _isDialogVisible = false);
-    // Tunggu dialog hilang sebelum pop, atau pop langsung jika tidak ada animasi keluar
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) Navigator.pop(context);
-    });
+    if (mounted) {
+      setState(() => _isDialogVisible = false);
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) Navigator.pop(context);
+      });
+    }
   }
 
-  Future<void> _handleResetPassword() async {
+  Future<void> _handleResetPassword(AuthController authController) async {
     if (_formKey.currentState!.validate()) {
-      FocusScope.of(context).unfocus(); // Tutup keyboard
+      FocusScope.of(context).unfocus();
 
-      await _authController.forgotPassword(email: _emailController.text);
+      bool success = await authController.forgotPassword(email: _emailController.text);
 
-      if (mounted && _authController.errorMessage == null && !_authController.isLoading) {
-        _showResetConfirmationDialog();
-      } else if (mounted && _authController.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_authController.errorMessage!), backgroundColor: AppColors.error),
-        );
+      if (mounted) {
+        // Selalu cek mounted setelah async call
+        if (success) {
+          _showResetConfirmationDialog();
+        } else if (authController.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(authController.errorMessage!), backgroundColor: AppColors.error),
+          );
+        } else {
+          // Kasus lain jika tidak sukses tapi tidak ada error message spesifik
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Gagal mengirim email reset. Coba lagi."),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }
@@ -59,20 +66,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _authController.dispose(); // Jangan lupa dispose
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    // Dengarkan perubahan pada AuthController
-    return ChangeNotifierProvider.value(
-      value: _authController,
+    return ChangeNotifierProvider(
+      create: (_) => AuthController(), // Buat instance baru
       child: Consumer<AuthController>(
-        builder: (context, controller, child) {
+        // Gunakan Consumer untuk mendapatkan instance AuthController
+        builder: (context, authController, child) {
+          // authController adalah instance dari Provider
           return Scaffold(
-            backgroundColor: AppColors.secondary, // Background biru muda
+            backgroundColor: AppColors.secondary,
             body: Stack(
               children: [
                 SingleChildScrollView(
@@ -82,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.1), // Spasi atas
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                         const Icon(Icons.lock_outline, size: 60, color: AppColors.textBlack),
                         AppSpacing.vsMedium,
                         Text(
@@ -125,10 +131,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
-                                  if (value == null || value.isEmpty)
+                                  if (value == null || value.isEmpty) {
                                     return 'Email tidak boleh kosong';
-                                  if (!value.contains('@') || !value.contains('.'))
+                                  }
+                                  if (!value.contains('@') || !value.contains('.')) {
                                     return 'Format email tidak valid';
+                                  }
                                   return null;
                                 },
                               ),
@@ -138,22 +146,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         AppSpacing.vsXLarge,
                         CustomButton(
                           text: 'Reset Password',
-                          onPressed: _handleResetPassword,
-                          isLoading: controller.isLoading, // Ambil status loading dari controller
+                          onPressed:
+                              authController.isLoading
+                                  ? null
+                                  : () =>
+                                      _handleResetPassword(authController), // Kirim authController
+                          isLoading: authController.isLoading,
                           width: double.infinity,
-                          type: ButtonType.outline, // Tombol outline
-                          customOutlineColor: AppColors.white, // Border dan teks putih
-                          customTextColor: AppColors.textWhite, // Teks putih
+                          type: ButtonType.outline,
+                          customOutlineColor: AppColors.white,
                         ),
                         AppSpacing.vsMedium,
                         CustomButton(
                           text: 'Kembali',
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: authController.isLoading ? null : () => Navigator.pop(context),
                           width: double.infinity,
-                          type: ButtonType.text, // Tombol teks
-                          customTextColor: AppColors.textWhite, // Teks putih
+                          type: ButtonType.text,
+                          customOutlineColor: AppColors.white,
                         ),
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.1), // Spasi bawah
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                       ],
                     ),
                   ),
@@ -174,8 +185,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         color: AppColors.black.withValues(alpha: 0.3),
         child: Center(
           child: Container(
-            margin: AppSpacing.hPaddingLarge.copyWith(left: 40, right: 40), // Margin lebih besar
-            padding: AppSpacing.aPaddingLarge,
+            margin: AppSpacing.hPaddingLarge.copyWith(left: 40, right: 40),
+            padding: AppSpacing.hPaddingLarge,
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(16),
@@ -193,16 +204,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(12), // Padding untuk ikon check
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.2), // Warna background ikon
+                    color: AppColors.secondary.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 30,
-                    color: AppColors.secondary,
-                  ), // Ukuran ikon disesuaikan
+                  child: const Icon(Icons.check, size: 30, color: AppColors.secondary),
                 ),
                 AppSpacing.vsMedium,
                 Text(
@@ -210,7 +217,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium.copyWith(color: AppColors.textBlack),
                 ),
-                AppSpacing.vsSmall, // Spasi sebelum tombol OK
+                AppSpacing.vsSmall,
               ],
             ),
           ),
