@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   late AnimationController _dotsAnimController;
   int _currentDot = 0;
-  final int _totalDots = 3;
+  final int _totalDots = 6;
 
   @override
   void initState() {
