@@ -1,14 +1,18 @@
+// File build.gradle.kts untuk modul aplikasi (android/app/build.gradle.kts)
+// File ini mengatur konfigurasi build spesifik untuk modul aplikasi Flutter-mu.
+
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("com.android.application") 
+    id("kotlin-android") 
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
-    namespace = "com.example.project_sicerdas"
+    namespace = "com.example.project_sicerdas" // GANTI DENGAN NAMESPACE PROYEKMU
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    
+    // SOLUSI MASALAH NDK: Update ndkVersion ke yang dibutuhkan plugin
+    ndkVersion = "27.0.12077973" // Sebelumnya flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,25 +24,40 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.project_sicerdas"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.example.project_sicerdas" // GANTI DENGAN APPLICATION ID PROYEKMU
+        
+        // SOLUSI MASALAH minSdkVersion: Naikkan minSdk ke 23
+        minSdk = 23 // Sebelumnya flutter.minSdkVersion
+        
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true 
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // isMinifyEnabled = true
+            // proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
 
 flutter {
-    source = "../.."
+    source = "../.." 
 }
+
+dependencies {
+    implementation(kotlin("stdlib"))
+
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0")) // Pastikan versi BoM stabil & terbaru
+
+    implementation("com.google.firebase:firebase-auth-ktx") 
+    implementation("com.google.firebase:firebase-database-ktx") 
+    implementation("com.google.firebase:firebase-analytics-ktx") 
+
+    // implementation("androidx.multidex:multidex:2.0.1") // Biasanya tidak perlu jika minSdk sudah 21+
+}
+
+apply(plugin = "com.google.gms.google-services")
