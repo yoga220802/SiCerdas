@@ -1,6 +1,3 @@
-// File build.gradle.kts untuk modul aplikasi (android/app/build.gradle.kts)
-// File ini mengatur konfigurasi build spesifik untuk modul aplikasi Flutter-mu.
-
 plugins {
     id("com.android.application") 
     id("kotlin-android") 
@@ -8,11 +5,9 @@ plugins {
 }
 
 android {
-    namespace = "com.example.project_sicerdas" // GANTI DENGAN NAMESPACE PROYEKMU
+    namespace = "com.example.project_sicerdas"
     compileSdk = flutter.compileSdkVersion
-    
-    // SOLUSI MASALAH NDK: Update ndkVersion ke yang dibutuhkan plugin
-    ndkVersion = "27.0.12077973" // Sebelumnya flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,10 +19,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.project_sicerdas" // GANTI DENGAN APPLICATION ID PROYEKMU
+        applicationId = "com.example.project_sicerdas"
         
-        // SOLUSI MASALAH minSdkVersion: Naikkan minSdk ke 23
-        minSdk = 23 // Sebelumnya flutter.minSdkVersion
+        minSdk = 23
         
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -51,13 +45,13 @@ flutter {
 dependencies {
     implementation(kotlin("stdlib"))
 
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0")) // Pastikan versi BoM stabil & terbaru
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
 
     implementation("com.google.firebase:firebase-auth-ktx") 
     implementation("com.google.firebase:firebase-database-ktx") 
     implementation("com.google.firebase:firebase-analytics-ktx") 
 
-    // implementation("androidx.multidex:multidex:2.0.1") // Biasanya tidak perlu jika minSdk sudah 21+
+    // implementation("androidx.multidex:multidex:2.0.1")
 }
 
 apply(plugin = "com.google.gms.google-services")
