@@ -30,9 +30,13 @@ environment:
 dependencies:
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
+  firebase_auth: ^5.5.4
+  firebase_core: ^3.13.1
+  firebase_database: ^11.3.6
   flutter:
     sdk: flutter
   google_fonts: ^6.2.1
+  provider: ^6.1.5
   intl: ^0.20.2
 
 dev_dependencies:
