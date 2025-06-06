@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 @immutable
 class NewsArticle {
@@ -29,13 +31,17 @@ class NewsArticle {
     this.isBookmarked = false,
   });
 
+  String get uniqueId {
+    return sha1.convert(utf8.encode(url)).toString();
+  }
+
   factory NewsArticle.fromNewsApi(Map<String, dynamic> json) {
     return NewsArticle(
       source: Source.fromJson(json['source'] as Map<String, dynamic>),
       author: json['author'] as String?,
-      title: json['title'] as String,
+      title: json['title'] as String? ?? 'No Title',
       description: json['description'] as String?,
-      url: json['url'] as String,
+      url: json['url'] as String? ?? '',
       urlToImage: json['urlToImage'] as String?,
       publishedAt: DateTime.tryParse(json['publishedAt'] as String? ?? '') ?? DateTime.now(),
       content: json['content'] as String?,
@@ -61,7 +67,7 @@ class NewsArticle {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': id ?? uniqueId,
       'source': source.toJson(),
       'author': author,
       'title': title,
@@ -110,10 +116,10 @@ class NewsArticle {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is NewsArticle && runtimeType == other.runtimeType && id == other.id;
+      other is NewsArticle && runtimeType == other.runtimeType && uniqueId == other.uniqueId;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => uniqueId.hashCode;
 }
 
 @immutable
@@ -124,7 +130,7 @@ class Source {
   const Source({this.id, required this.name});
 
   factory Source.fromJson(Map<String, dynamic> json) {
-    return Source(id: json['id'] as String?, name: json['name'] as String);
+    return Source(id: json['id'] as String?, name: json['name'] as String? ?? 'Unknown Source');
   }
 
   Map<String, dynamic> toJson() {

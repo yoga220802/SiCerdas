@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_sicerdas/app/constants/app_info.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
@@ -8,13 +7,14 @@ import 'package:project_sicerdas/app/widgets/custom_text_field.dart';
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearchChanged;
-  final VoidCallback? onSearchTop;
+  final VoidCallback? onSearchTap;
 
-  const AppHeader({super.key, this.searchController, this.onSearchChanged, this.onSearchTop});
+  const AppHeader({super.key, this.searchController, this.onSearchChanged, this.onSearchTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return SafeArea(
       child: Container(
         padding: AppSpacing.aPaddingMedium,
@@ -24,25 +24,25 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           children: [
             Row(
               children: [
-                Image.asset('assets/images/logo.png', width: 40, height: 40),
+                Image.asset('assets/images/logo.png', height: 40, width: 40),
                 AppSpacing.hsSmall,
                 Text(
-                  AppInfo.appName,
+                  'SICERDAS',
                   style: AppTypography.headlineMedium.copyWith(color: AppColors.primary),
                 ),
-                Spacer(),
+                const Spacer(),
                 IconButton(
                   onPressed: () {},
-                  icon: const Icon(Icons.notifications_none_outlined, color: AppColors.grey),
+                  icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textGrey),
                 ),
               ],
             ),
             AppSpacing.vsMedium,
             CustomTextField(
-              hintText: "Cari Berita...",
               controller: searchController ?? TextEditingController(),
               onChanged: onSearchChanged,
-              onTap: onSearchTop,
+              onTap: onSearchTap,
+              hintText: 'Cari berita, topik, atau sumber...',
               prefixIcon: const Icon(Icons.search, color: AppColors.textGrey),
             ),
           ],
@@ -52,6 +52,5 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  // TODO: implement preferredSize
-  Size get preferredSize => throw UnimplementedError();
+  Size get preferredSize => const Size.fromHeight(170.0);
 }
