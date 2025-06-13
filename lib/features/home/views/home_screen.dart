@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:project_sicerdas/app/theme/app_colors.dart';
-import 'package:project_sicerdas/app/theme/app_typography.dart';
-import 'package:project_sicerdas/app/theme/app_spacing.dart';
-import 'package:project_sicerdas/app/widgets/custom_button.dart';
-import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
-import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
+import 'package:project_sicerdas/app/widgets/news_source.dart';
 import 'package:provider/provider.dart';
+import 'package:project_sicerdas/app/widgets/app_header.dart';
+import 'package:project_sicerdas/app/widgets/news_card.dart';
+import 'package:project_sicerdas/data/models/news_model.dart';
+import 'package:project_sicerdas/features/home/controllers/news_controller.dart';
+import 'package:project_sicerdas/app/theme/app_spacing.dart';
+import 'package:project_sicerdas/app/theme/app_typography.dart';
+import 'package:project_sicerdas/app/theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,75 +16,211 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  Future<void> _handleLogout() async {
-    final authController = Provider.of<AuthController>(context, listen: false);
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
-    await authController.logoutUser();
+  final List<String> _categories = const [
+    'General',
+    'Business',
+    'Entertainment',
+    'Health',
+    'Science',
+    'Sports',
+    'Technology',
+  ];
 
-    if (mounted) {
-      // Selalu cek mounted setelah async call
-      // Navigasi ke AuthScreen dan hapus semua route sebelumnya
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const AuthScreen()),
-        (Route<dynamic> route) => false, // Hapus semua route sebelumnya dari stack
-      );
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _categories.length, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final newsController = Provider.of<NewsController>(context, listen: false);
+      if (newsController.articlesByCategory.isEmpty) {
+        newsController.fetchInitialData(_categories.first);
+      }
+    });
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (!_tabController.indexIsChanging) {
+      final selectedCategory = _categories[_tabController.index];
+      Provider.of<NewsController>(context, listen: false).fetchNewsForCategory(selectedCategory);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundGrey,
       appBar: AppBar(
-        title: Text(
-          'Beranda Sicerdas',
-          style: AppTypography.headlineMedium,
-          selectionColor: AppColors.black,
+        elevation: 0,
+        toolbarHeight: 120,
+        backgroundColor: AppColors.white,
+        title: const AppHeader(),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textGrey,
+          indicatorColor: AppColors.primary,
+          indicatorWeight: 3.0,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelStyle: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.bold),
+          unselectedLabelStyle: AppTypography.bodyMedium,
+          tabAlignment: TabAlignment.start,
+          tabs: _categories.map((String category) => Tab(text: category)).toList(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.black),
-            onPressed: _handleLogout,
-            tooltip: 'Logout',
-          ),
-        ],
       ),
-      body: Center(
+      // KEMBALIKAN BODY SEPERTI AWAL, HANYA TABBARVIEW
+      body: Consumer<NewsController>(
+        builder: (context, controller, child) {
+          return TabBarView(
+            controller: _tabController,
+            children:
+                _categories.map((String category) {
+                  final lowerCaseCategory = category.toLowerCase();
+                  return NewsCategoryView(
+                    category: category,
+                    news: controller.articlesByCategory[lowerCaseCategory] ?? [],
+                    // PASSING DATA SOURCE YANG SESUAI KATEGORI
+                    sources: controller.sourcesByCategory[lowerCaseCategory] ?? [],
+                    isLoading: controller.isLoadingForCategory(lowerCaseCategory),
+                    onRefresh: () => controller.fetchNewsForCategory(category),
+                  );
+                }).toList(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// UBAH LAGI NewsCategoryView untuk menerima 'sources'
+class NewsCategoryView extends StatelessWidget {
+  final String category;
+  final List<NewsArticle> news;
+  final List<ApiSource> sources; // <-- Tambahkan lagi
+  final bool isLoading;
+  final Future<void> Function() onRefresh;
+
+  const NewsCategoryView({
+    super.key,
+    required this.category,
+    required this.news,
+    required this.sources, // <-- Tambahkan lagi
+    required this.isLoading,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading && news.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
+    if (!isLoading && news.isEmpty && sources.isEmpty) {
+      return Center(
         child: Padding(
           padding: AppSpacing.aPaddingLarge,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.home_work_outlined, size: 80, color: theme.colorScheme.primary),
-              AppSpacing.vsMedium,
-              Text(
-                'Selamat Datang di Beranda!',
-                // 'Selamat Datang, ${authController.currentUser?.displayName ?? 'Pengguna'}!',
-                style: AppTypography.headlineSmall.copyWith(color: theme.colorScheme.primary),
-                textAlign: TextAlign.center,
-              ),
-              AppSpacing.vsSmall,
-              Text(
-                'Ini adalah halaman utama aplikasi Sicerdas setelah Anda berhasil login. Konten berita akan ditampilkan di sini.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              // TODO: Tambahkan UI untuk menampilkan daftar berita
-              AppSpacing.vsLarge,
-              // Tombol logout alternatif di body jika diperlukan
-              CustomButton(
-                text: "Logout dari Sini",
-                onPressed: _handleLogout,
-                type: ButtonType.secondary,
-              ),
-            ],
+          child: Text(
+            "Tidak ada berita atau sumber untuk kategori '$category'.",
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textGrey),
           ),
         ),
+      );
+    }
+
+    final featuredNews = news.length > 5 ? news.take(5).toList() : news;
+    final regularNews = news.length > 5 ? news.sublist(5) : <NewsArticle>[];
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppSpacing.vsLarge,
+            // KEMBALIKAN NewsSourcesWidget ke sini, TANPA if
+            if (sources.isNotEmpty)
+              NewsSourcesWidget(
+                sources: sources,
+                onSourceTap: (sourceId) {
+                  print('Filter berdasarkan source: $sourceId');
+                },
+              ),
+
+            if (featuredNews.isNotEmpty) ...[
+              AppSpacing.vsLarge,
+              _buildFeaturedSection(context, featuredNews),
+            ],
+            if (regularNews.isNotEmpty) ...[
+              AppSpacing.vsLarge,
+              _buildRegularSection(context, regularNews),
+            ],
+            AppSpacing.vsLarge,
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ... (sisanya sama, tidak perlu diubah) ...
+  Widget _buildFeaturedSection(BuildContext context, List<NewsArticle> articles) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: AppSpacing.hPaddingMedium,
+          child: Text('Terbaru', style: AppTypography.headlineSmall),
+        ),
+        AppSpacing.vsMedium,
+        SizedBox(
+          height: 250,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: AppSpacing.hPaddingMedium,
+            itemCount: articles.length,
+            itemBuilder: (context, index) {
+              return Container(
+                width: MediaQuery.of(context).size.width * 0.75,
+                margin: const EdgeInsets.only(right: 16),
+                child: FeaturedNewsCard(article: articles[index], onTap: () {}),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegularSection(BuildContext context, List<NewsArticle> articles) {
+    return Padding(
+      padding: AppSpacing.hPaddingMedium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Berita diseluruh dunia', style: AppTypography.headlineSmall),
+          AppSpacing.vsMedium,
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: articles.length,
+            separatorBuilder: (context, index) => AppSpacing.vsMedium,
+            itemBuilder: (context, index) {
+              return RegularNewsCard(article: articles[index], onTap: () {}, onBookmarkTap: () {});
+            },
+          ),
+        ],
       ),
     );
   }

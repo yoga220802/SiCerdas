@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
+// Model untuk sebuah artikel berita
 @immutable
 class NewsArticle {
   final String? id;
@@ -122,6 +123,7 @@ class NewsArticle {
   int get hashCode => uniqueId.hashCode;
 }
 
+// Model untuk objek 'source' di dalam sebuah NewsArticle
 @immutable
 class Source {
   final String? id;
@@ -138,16 +140,44 @@ class Source {
   }
 }
 
+// *** DEFINISI KELAS ApiSource YANG HILANG ***
+// Model untuk data yang didapat dari endpoint /sources di NewsAPI
+@immutable
+class ApiSource {
+  final String id;
+  final String name;
+  final String? description;
+  final String? url;
+  final String? category;
+  final String? language;
+  final String? country;
+
+  const ApiSource({
+    required this.id,
+    required this.name,
+    this.description,
+    this.url,
+    this.category,
+    this.language,
+    this.country,
+  });
+
+  factory ApiSource.fromSourceApi(Map<String, dynamic> json) {
+    return ApiSource(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      url: json['url'] as String?,
+      category: json['category'] as String?,
+      language: json['language'] as String?,
+      country: json['country'] as String?,
+    );
+  }
+}
+
 class TrendingTopic {
   final String name;
   final String count;
 
   TrendingTopic({required this.name, required this.count});
-}
-
-class NewsSource {
-  final String id;
-  final String name;
-
-  NewsSource({required this.id, required this.name});
 }

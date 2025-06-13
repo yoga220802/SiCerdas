@@ -5,10 +5,26 @@ import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
 
 class NewsSourcesWidget extends StatelessWidget {
-  final List<NewsSource> sources;
+  final List<ApiSource> sources;
   final Function(String) onSourceTap;
 
   const NewsSourcesWidget({super.key, required this.sources, required this.onSourceTap});
+
+  // Fungsi untuk mendapatkan URL logo dari Clearbit berdasarkan URL sumber berita
+  String _getLogoUrl(String? sourceUrl) {
+    if (sourceUrl == null || sourceUrl.isEmpty) {
+      return ''; // Kembalikan string kosong jika URL tidak ada
+    }
+    try {
+      final domain = Uri.parse(sourceUrl).host;
+      // Bersihkan 'www.' jika ada untuk hasil yang lebih baik
+      final cleanDomain = domain.startsWith('www.') ? domain.substring(4) : domain;
+      return 'https://logo.clearbit.com/$cleanDomain';
+    } catch (e) {
+      print('Error parsing URL for logo: $sourceUrl');
+      return ''; // Kembalikan string kosong jika terjadi error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +36,7 @@ class NewsSourcesWidget extends StatelessWidget {
         itemCount: sources.length,
         itemBuilder: (context, index) {
           final source = sources[index];
+          final logoUrl = _getLogoUrl(source.url);
 
           return Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -40,35 +57,34 @@ class NewsSourcesWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ClipOval(child: _buildSourceLogo(source)),
+                child: ClipOval(
+                  child: Image.network(
+                    logoUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Placeholder jika logo gagal dimuat atau URL kosong
+                      return Container(
+                        color: AppColors.lightGrey,
+                        child: Center(
+                          child: Text(
+                            source.name.substring(0, 1).toUpperCase(),
+                            style: AppTypography.titleMedium.copyWith(color: AppColors.primary),
+                          ),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildSourceLogo(NewsSource source) {
-    // TODO: Ganti dengan logo asli dari API atau asset lokal
-    // Contoh pemetaan sederhana untuk logo lokal:
-    final logoMap = {
-      // 'cnn': 'assets/logos/cnn_logo.png',
-      // 'inews': 'assets/logos/inews_logo.png',
-      // 'bbc-news': 'assets/logos/bbc_logo.png',
-    };
-
-    if (logoMap.containsKey(source.id)) {
-      return Image.asset(logoMap[source.id]!, fit: BoxFit.contain);
-    }
-
-    return Container(
-      color: AppColors.lightGrey,
-      child: Center(
-        child: Text(
-          source.name.substring(0, 1).toUpperCase(),
-          style: AppTypography.titleMedium.copyWith(color: AppColors.primary),
-        ),
       ),
     );
   }

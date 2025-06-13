@@ -26,18 +26,18 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
 
   final List<OnboardingData> _onboardingData = [
     OnboardingData(
-      image: 'assets/images/Image 1.png', // Pastikan path benar
+      image: 'assets/images/Image 1.png',
       title: 'Informasi Berita Terkini',
       description: 'Menyediakan berita terbaru dari berbagai kategori secara real-time dan akurat.',
     ),
     OnboardingData(
-      image: 'assets/images/Image 2.png', // Pastikan path benar
+      image: 'assets/images/Image 2.png',
       title: 'Cepat dan Tepat Waktu',
       description:
           'Aplikasi Berita menyajikan informasi dengan pembaruan waktu nyata, memastikan pengguna tidak ketinggalan peristiwa penting.',
     ),
     OnboardingData(
-      image: 'assets/images/Image 3.png', // Pastikan path benar
+      image: 'assets/images/Image 3.png',
       title: 'Mudah Digunakan oleh Semua',
       description:
           'Dirancang dengan antarmuka sederhana dan mudah digunakan oleh semua kalangan pengguna.',
@@ -75,11 +75,11 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
     final ThemeData theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.white, // Latar belakang utama
+      backgroundColor: AppColors.white,
       body: Column(
         children: [
           Expanded(
-            flex: 3, // Bagian untuk gambar onboarding
+            flex: 3,
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
@@ -105,11 +105,9 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
             flex: 2, // Bagian untuk teks dan tombol
             child: Container(
               width: double.infinity,
-              padding: AppSpacing.aPaddingLarge.copyWith(
-                top: 16.0, // Replace with an appropriate double value
-              ), // Padding lebih besar di atas
+              padding: AppSpacing.aPaddingLarge.copyWith(top: 16.0),
               decoration: const BoxDecoration(
-                color: AppColors.secondary, // Warna biru muda dari auth_screen
+                color: AppColors.secondary,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
@@ -125,7 +123,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                         return FadeTransition(opacity: animation, child: child);
                       },
                       child: Column(
-                        key: ValueKey<int>(_currentPage), // Key untuk animasi yang benar
+                        key: ValueKey<int>(_currentPage),
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
@@ -147,7 +145,6 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     ),
                   ),
                   AppSpacing.vsLarge,
-                  // Indikator halaman
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
@@ -177,7 +174,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     customTextColor: AppColors.textWhite,
                     width: double.infinity,
                   ),
-                  AppSpacing.vsMedium, // Spasi tambahan di bawah
+                  AppSpacing.vsMedium,
                 ],
               ),
             ),
