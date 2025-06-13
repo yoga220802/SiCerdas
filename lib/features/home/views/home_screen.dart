@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
 import 'package:project_sicerdas/app/widgets/news_source.dart';
 import 'package:provider/provider.dart';
 import 'package:project_sicerdas/app/widgets/app_header.dart';
@@ -58,13 +59,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    // Mengambil data user dari AuthController
+    final authController = Provider.of<AuthController>(context);
+    print('Debug: Current user -> ${authController.currentUser}');
+    final username = authController.currentUser?.displayName ?? 'Pengguna';
+
     return Scaffold(
       backgroundColor: AppColors.backgroundGrey,
       appBar: AppBar(
         elevation: 0,
-        toolbarHeight: 120,
+        toolbarHeight: 100,
         backgroundColor: AppColors.white,
-        title: const AppHeader(),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppHeader(),
+            AppSpacing.vsMedium,
+            Padding(
+              padding: const EdgeInsets.only(left: 4.0, top: 10),
+              child: RichText(
+                text: TextSpan(
+                  style: AppTypography.headlineSmall.copyWith(color: AppColors.textGrey),
+                  children: <TextSpan>[
+                    const TextSpan(text: 'Selamat Datang,\n'),
+                    TextSpan(
+                      text: username,
+                      style: AppTypography.headlineSmall.copyWith(
+                        color: AppColors.textBlack,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -79,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           tabs: _categories.map((String category) => Tab(text: category)).toList(),
         ),
       ),
-      // KEMBALIKAN BODY SEPERTI AWAL, HANYA TABBARVIEW
       body: Consumer<NewsController>(
         builder: (context, controller, child) {
           return TabBarView(
@@ -90,7 +119,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   return NewsCategoryView(
                     category: category,
                     news: controller.articlesByCategory[lowerCaseCategory] ?? [],
-                    // PASSING DATA SOURCE YANG SESUAI KATEGORI
                     sources: controller.sourcesByCategory[lowerCaseCategory] ?? [],
                     isLoading: controller.isLoadingForCategory(lowerCaseCategory),
                     onRefresh: () => controller.fetchNewsForCategory(category),
@@ -103,11 +131,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-// UBAH LAGI NewsCategoryView untuk menerima 'sources'
 class NewsCategoryView extends StatelessWidget {
   final String category;
   final List<NewsArticle> news;
-  final List<ApiSource> sources; // <-- Tambahkan lagi
+  final List<ApiSource> sources;
   final bool isLoading;
   final Future<void> Function() onRefresh;
 
@@ -115,7 +142,7 @@ class NewsCategoryView extends StatelessWidget {
     super.key,
     required this.category,
     required this.news,
-    required this.sources, // <-- Tambahkan lagi
+    required this.sources,
     required this.isLoading,
     required this.onRefresh,
   });
@@ -142,6 +169,13 @@ class NewsCategoryView extends StatelessWidget {
     final featuredNews = news.length > 5 ? news.take(5).toList() : news;
     final regularNews = news.length > 5 ? news.sublist(5) : <NewsArticle>[];
 
+    void _goToDetail(NewsArticle article) {
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => NewsDetailScreen(article: article)),
+      // );
+    }
+
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: AppColors.primary,
@@ -150,7 +184,6 @@ class NewsCategoryView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppSpacing.vsLarge,
-            // KEMBALIKAN NewsSourcesWidget ke sini, TANPA if
             if (sources.isNotEmpty)
               NewsSourcesWidget(
                 sources: sources,
@@ -158,14 +191,13 @@ class NewsCategoryView extends StatelessWidget {
                   print('Filter berdasarkan source: $sourceId');
                 },
               ),
-
             if (featuredNews.isNotEmpty) ...[
               AppSpacing.vsLarge,
-              _buildFeaturedSection(context, featuredNews),
+              _buildFeaturedSection(context, featuredNews, _goToDetail),
             ],
             if (regularNews.isNotEmpty) ...[
               AppSpacing.vsLarge,
-              _buildRegularSection(context, regularNews),
+              _buildRegularSection(context, regularNews, _goToDetail),
             ],
             AppSpacing.vsLarge,
           ],
@@ -174,8 +206,11 @@ class NewsCategoryView extends StatelessWidget {
     );
   }
 
-  // ... (sisanya sama, tidak perlu diubah) ...
-  Widget _buildFeaturedSection(BuildContext context, List<NewsArticle> articles) {
+  Widget _buildFeaturedSection(
+    BuildContext context,
+    List<NewsArticle> articles,
+    void Function(NewsArticle) onCardTap,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +229,10 @@ class NewsCategoryView extends StatelessWidget {
               return Container(
                 width: MediaQuery.of(context).size.width * 0.75,
                 margin: const EdgeInsets.only(right: 16),
-                child: FeaturedNewsCard(article: articles[index], onTap: () {}),
+                child: FeaturedNewsCard(
+                  article: articles[index],
+                  onTap: () => onCardTap(articles[index]),
+                ),
               );
             },
           ),
@@ -203,7 +241,11 @@ class NewsCategoryView extends StatelessWidget {
     );
   }
 
-  Widget _buildRegularSection(BuildContext context, List<NewsArticle> articles) {
+  Widget _buildRegularSection(
+    BuildContext context,
+    List<NewsArticle> articles,
+    void Function(NewsArticle) onCardTap,
+  ) {
     return Padding(
       padding: AppSpacing.hPaddingMedium,
       child: Column(
@@ -217,7 +259,11 @@ class NewsCategoryView extends StatelessWidget {
             itemCount: articles.length,
             separatorBuilder: (context, index) => AppSpacing.vsMedium,
             itemBuilder: (context, index) {
-              return RegularNewsCard(article: articles[index], onTap: () {}, onBookmarkTap: () {});
+              return RegularNewsCard(
+                article: articles[index],
+                onTap: () => onCardTap(articles[index]),
+                onBookmarkTap: () {},
+              );
             },
           ),
         ],

@@ -68,9 +68,8 @@ class AuthController extends ChangeNotifier {
       );
 
       if (userCredential.user != null) {
-        // Update display name di Firebase Auth (jika diperlukan langsung)
-        // await userCredential.user!.updateDisplayName(username);
-        // await userCredential.user!.reload(); // Reload user untuk mendapatkan data terbaru
+        await userCredential.user!.updateDisplayName(username);
+        await userCredential.user!.reload();
 
         // Buat profil user di Realtime Database
         final newUser = UserModel(
