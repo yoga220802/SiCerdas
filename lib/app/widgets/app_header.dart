@@ -15,7 +15,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
     return SafeArea(
       child: Container(
-        height: 20,
+        height: 50,
         padding: AppSpacing.hPaddingMedium,
         color: AppColors.white,
         child: Row(
@@ -71,5 +71,5 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(40);
+  Size get preferredSize => const Size.fromHeight(70);
 }

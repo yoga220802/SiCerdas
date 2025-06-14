@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
 import 'package:project_sicerdas/app/widgets/news_source.dart';
+import 'package:project_sicerdas/features/home/views/news_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:project_sicerdas/app/widgets/app_header.dart';
 import 'package:project_sicerdas/app/widgets/news_card.dart';
@@ -59,24 +60,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    // Mengambil data user dari AuthController
     final authController = Provider.of<AuthController>(context);
-    print('Debug: Current user -> ${authController.currentUser}');
     final username = authController.currentUser?.displayName ?? 'Pengguna';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundGrey,
       appBar: AppBar(
         elevation: 0,
-        toolbarHeight: 100,
+        toolbarHeight: 140,
         backgroundColor: AppColors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const AppHeader(),
             AppSpacing.vsMedium,
             Padding(
-              padding: const EdgeInsets.only(left: 4.0, top: 10),
+              padding: const EdgeInsets.only(left: 4.0),
               child: RichText(
                 text: TextSpan(
                   style: AppTypography.headlineSmall.copyWith(color: AppColors.textGrey),
@@ -109,23 +109,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           tabs: _categories.map((String category) => Tab(text: category)).toList(),
         ),
       ),
-      body: Consumer<NewsController>(
-        builder: (context, controller, child) {
-          return TabBarView(
-            controller: _tabController,
-            children:
-                _categories.map((String category) {
-                  final lowerCaseCategory = category.toLowerCase();
-                  return NewsCategoryView(
-                    category: category,
-                    news: controller.articlesByCategory[lowerCaseCategory] ?? [],
-                    sources: controller.sourcesByCategory[lowerCaseCategory] ?? [],
-                    isLoading: controller.isLoadingForCategory(lowerCaseCategory),
-                    onRefresh: () => controller.fetchNewsForCategory(category),
-                  );
-                }).toList(),
-          );
-        },
+      body: Column(
+        children: [
+          AppSpacing.vsLarge,
+          Expanded(
+            child: Consumer<NewsController>(
+              builder: (context, controller, child) {
+                return TabBarView(
+                  controller: _tabController,
+                  children:
+                      _categories.map((String category) {
+                        final lowerCaseCategory = category.toLowerCase();
+                        return NewsCategoryView(
+                          category: category,
+                          news: controller.articlesByCategory[lowerCaseCategory] ?? [],
+                          sources: controller.sourcesByCategory[lowerCaseCategory] ?? [],
+                          isLoading: controller.isLoadingForCategory(lowerCaseCategory),
+                          onRefresh: () => controller.fetchNewsForCategory(category),
+                        );
+                      }).toList(),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -169,21 +176,26 @@ class NewsCategoryView extends StatelessWidget {
     final featuredNews = news.length > 5 ? news.take(5).toList() : news;
     final regularNews = news.length > 5 ? news.sublist(5) : <NewsArticle>[];
 
-    void _goToDetail(NewsArticle article) {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => NewsDetailScreen(article: article)),
-      // );
+    void _goToDetail(BuildContext context, NewsArticle article) {
+      if (article.url.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NewsDetailScreen(article: article)),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Maaf, link berita ini tidak tersedia.')));
+      }
     }
 
     return RefreshIndicator(
       onRefresh: onRefresh,
-      color: AppColors.primary,
+      color: AppColors.secondary,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppSpacing.vsLarge,
             if (sources.isNotEmpty)
               NewsSourcesWidget(
                 sources: sources,
@@ -193,11 +205,19 @@ class NewsCategoryView extends StatelessWidget {
               ),
             if (featuredNews.isNotEmpty) ...[
               AppSpacing.vsLarge,
-              _buildFeaturedSection(context, featuredNews, _goToDetail),
+              _buildFeaturedSection(
+                context,
+                featuredNews,
+                (article) => _goToDetail(context, article),
+              ),
             ],
             if (regularNews.isNotEmpty) ...[
               AppSpacing.vsLarge,
-              _buildRegularSection(context, regularNews, _goToDetail),
+              _buildRegularSection(
+                context,
+                regularNews,
+                (article) => _goToDetail(context, article),
+              ),
             ],
             AppSpacing.vsLarge,
           ],

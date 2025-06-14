@@ -3,6 +3,7 @@
         android:label="project_sicerdas"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:hardwareAccelerated="true"
         android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
