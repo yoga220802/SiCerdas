@@ -3,6 +3,7 @@ import 'package:project_sicerdas/app/widgets/app_header.dart';
 import 'package:project_sicerdas/data/models/news_model.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
+import 'package:project_sicerdas/features/chat/views/chat_screen.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class NewsDetailScreen extends StatefulWidget {
@@ -56,11 +57,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   }
 
   void _onChatbotTap() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Membuka chatbot untuk: ${widget.article.url}'),
-        backgroundColor: AppColors.primary,
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ChatScreen(article: widget.article)),
     );
   }
 
