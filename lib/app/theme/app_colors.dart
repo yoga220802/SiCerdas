@@ -32,4 +32,7 @@ class AppColors {
   // Warna spesifik dari UI yang sudah ada
   static const Color splashCircleBlue = Color.fromRGBO(138, 159, 216, 1);
   static const Color splashLoadingDot = Color.fromRGBO(138, 79, 189, 1);
+
+  // Warna transparan
+  static const Color transparent = Color.fromRGBO(0, 0, 0, 0.0);
 }
