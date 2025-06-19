@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:project_sicerdas/data/models/user_model.dart';
 import 'package:project_sicerdas/data/services/firebase_db_service.dart';
+import 'package:project_sicerdas/data/services/refactor_news_api_services.dart';
 
 class AuthController extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDbProvider _dbProvider = FirebaseDbProvider();
+  final CustomApiService _customApiService = CustomApiService(); // <-- INSTANCE BARU
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -31,9 +33,22 @@ class AuthController extends ChangeNotifier {
     _setError(null);
     bool success = false;
     try {
+      // Langkah 1: Login ke Firebase
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      print("Login berhasil untuk: $email");
-      success = true;
+      print("Login Firebase berhasil untuk: $email");
+
+      // Langkah 2: Login ke API Kustom
+      final bool customApiLoginSuccess = await _customApiService.loginToCustomApi();
+
+      if (customApiLoginSuccess) {
+        // Jika kedua login berhasil
+        success = true;
+      } else {
+        // Jika login API kustom gagal, logout dari Firebase agar state konsisten
+        await _auth.signOut();
+        _setError('Gagal terhubung ke server berita.');
+        print("Login API Kustom gagal, Firebase sign out dijalankan.");
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         _setError('User tidak ditemukan untuk email tersebut.');
@@ -71,7 +86,6 @@ class AuthController extends ChangeNotifier {
         await userCredential.user!.updateDisplayName(username);
         await userCredential.user!.reload();
 
-        // Buat profil user di Realtime Database
         final newUser = UserModel(
           uid: userCredential.user!.uid,
           email: email,
@@ -101,6 +115,7 @@ class AuthController extends ChangeNotifier {
     return success;
   }
 
+  // Metode forgotPassword tidak perlu diubah
   Future<bool> forgotPassword({required String email}) async {
     _setLoading(true);
     _setError(null);
@@ -124,8 +139,10 @@ class AuthController extends ChangeNotifier {
   Future<void> logoutUser() async {
     _setLoading(true);
     try {
+      // Logout dari kedua layanan
       await _auth.signOut();
-      print("User logged out");
+      await _customApiService.logout();
+      print("User logged out dari Firebase dan token kustom dihapus");
     } catch (e) {
       print("Logout error: $e");
     } finally {
