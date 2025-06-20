@@ -41,6 +41,7 @@ dependencies:
   http: ^1.4.0
   intl: ^0.20.2
   provider: ^6.1.5
+  share_plus: ^11.0.0
   shared_preferences: ^2.5.3
   webview_flutter: ^4.13.0
 

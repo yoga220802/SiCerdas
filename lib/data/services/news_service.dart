@@ -1,85 +1,53 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:project_sicerdas/data/models/news_model.dart';
+import 'package:project_sicerdas/data/services/refactor_news_api_services.dart';
 
 class NewsService {
-  final String _baseUrl = "https://newsapi.org/v2";
-  // Ambil API Key dari environment variables
-  final String? _apiKey = dotenv.env['NEWS_API_KEY'];
+  final String _baseUrl = 'http://45.149.187.204:3000/api';
+  final CustomApiService _customApiService = CustomApiService();
 
-  // Fungsi internal untuk melakukan fetch dan parse data
-  Future<List<NewsArticle>> _fetchNewsData(String url) async {
-    if (_apiKey == null) {
-      throw Exception('NEWS_API_KEY tidak ditemukan di file .env');
+  // Method untuk mengambil berita dari backend kustom
+  Future<List<NewsModel>> getNews() async {
+    // Dapatkan token JWT dari layanan API kustom
+    final token = await _customApiService.getToken();
+
+    if (token == null) {
+      throw Exception('Sesi tidak valid. Silakan login kembali.');
     }
+
+    // Siapkan header dengan token Authorization
+    final headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'};
+
+    // Bangun URI untuk endpoint /author/news
+    var uri = Uri.parse('$_baseUrl/author/news');
+
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        if (jsonResponse['status'] == 'ok') {
-          final List articles = jsonResponse['articles'];
-          return articles
-              .where((article) => article['title'] != null && article['url'] != null)
-              .map((article) => NewsArticle.fromNewsApi(article))
-              .toList();
+        final Map<String, dynamic> decodedResponse = json.decode(response.body);
+
+        // Navigasi ke dalam struktur JSON yang benar
+        final body = decodedResponse['body'];
+        if (body != null && body['success'] == true) {
+          final List<dynamic> articlesJson = body['data'];
+          // Ubah setiap item JSON menjadi objek NewsModel
+          return articlesJson.map((json) => NewsModel.fromCustomApiJson(json)).toList();
         } else {
-          throw Exception('Gagal mendapatkan berita: ${jsonResponse['message']}');
+          throw Exception('Gagal memuat data berita: ${body['message']}');
         }
+      } else if (response.statusCode == 401) {
+        // Token tidak valid atau kedaluwarsa
+        throw Exception('Sesi Anda telah berakhir. Silakan login kembali.');
       } else {
-        throw Exception('Gagal terhubung ke server: ${response.statusCode}');
+        // Error server lainnya
+        throw Exception('Gagal memuat berita. Kode status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error di NewsService: $e');
-      throw Exception('Terjadi kesalahan saat mengambil data berita.');
-    }
-  }
-
-  // Fungsi untuk mendapatkan berita utama (top headlines)
-  Future<List<NewsArticle>> getTopHeadlines({String country = 'us'}) async {
-    final url = '$_baseUrl/top-headlines?country=$country&apiKey=$_apiKey';
-    return _fetchNewsData(url);
-  }
-
-  // Fungsi untuk mendapatkan berita berdasarkan kategori
-  Future<List<NewsArticle>> getNewsByCategory({
-    required String category,
-    String country = 'us',
-  }) async {
-    final url =
-        '$_baseUrl/top-headlines?country=$country&category=${category.toLowerCase()}&apiKey=$_apiKey';
-    return _fetchNewsData(url);
-  }
-
-  Future<List<ApiSource>> getSources({
-    String language = 'en',
-    String? category, // <-- TAMBAHKAN PARAMETER KATEGORI (nullable)
-  }) async {
-    if (_apiKey == null) throw Exception('NEWS_API_KEY tidak ditemukan di file .env');
-
-    var url = '$_baseUrl/top-headlines/sources?language=$language&apiKey=$_apiKey';
-    // Jika ada kategori, tambahkan ke URL
-    if (category != null && category.isNotEmpty && category != 'semua') {
-      url += '&category=${category.toLowerCase()}';
-    }
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        if (jsonResponse['status'] == 'ok') {
-          final List sources = jsonResponse['sources'];
-          return sources.map((source) => ApiSource.fromSourceApi(source)).toList();
-        } else {
-          throw Exception('Gagal mendapatkan sumber berita: ${jsonResponse['message']}');
-        }
-      } else {
-        throw Exception('Gagal terhubung ke server: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error di NewsService (getSources): $e');
-      throw Exception('Terjadi kesalahan saat mengambil data sumber berita.');
+      // Lemparkan kembali error agar UI bisa menanganinya
+      rethrow;
     }
   }
 }

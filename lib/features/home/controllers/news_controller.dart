@@ -5,71 +5,67 @@ import 'package:project_sicerdas/data/services/news_service.dart';
 class NewsController extends ChangeNotifier {
   final NewsService _newsService = NewsService();
 
-  // UBAH: dari List<ApiSource> menjadi Map<String, List<ApiSource>>
-  final Map<String, List<ApiSource>> _sourcesByCategory = {};
-  Map<String, List<ApiSource>> get sourcesByCategory => _sourcesByCategory;
+  // State
+  bool _isLoading = true; // Status loading data
+  String? _errorMessage; // Pesan error jika terjadi kesalahan
+  List<NewsModel> _allNews = []; // Semua berita yang diambil
+  List<String> _categories = []; // Daftar kategori berita
+  String _selectedCategory = 'Semua'; // Kategori yang dipilih
 
-  final Map<String, List<NewsArticle>> _articlesByCategory = {};
-  Map<String, List<NewsArticle>> get articlesByCategory => _articlesByCategory;
-
-  final Map<String, bool> _isLoadingByCategory = {};
-  bool isLoadingForCategory(String category) => _isLoadingByCategory[category] ?? false;
-
-  String? _errorMessage;
+  // Getters untuk diakses oleh UI
+  bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  List<String> get categories => _categories;
+  String get selectedCategory => _selectedCategory;
 
-  void _setError(String? message) {
-    _errorMessage = message;
-    notifyListeners();
+  // Getter untuk berita yang sudah difilter berdasarkan kategori
+  List<NewsModel> get filteredNews {
+    if (_selectedCategory == 'Semua') {
+      return _allNews;
+    }
+    return _allNews.where((news) => news.category == _selectedCategory).toList();
   }
 
-  // UBAH: fetchInitialData sekarang hanya memanggil fetchNewsForCategory
-  Future<void> fetchInitialData(String initialCategory) async {
-    await fetchNewsForCategory(initialCategory);
+  // Constructor untuk langsung memuat data saat controller dibuat
+  NewsController() {
+    fetchInitialNews();
   }
 
-  // HAPUS FUNGSI fetchSources() YANG LAMA
-
-  // UBAH: fetchNewsForCategory sekarang mengambil berita DAN sumber berita
-  Future<void> fetchNewsForCategory(String category) async {
-    final lowerCaseCategory = category.toLowerCase();
-
-    // Jangan fetch ulang jika data sudah ada
-    if (_articlesByCategory.containsKey(lowerCaseCategory)) return;
-
-    _isLoadingByCategory[lowerCaseCategory] = true;
-    _setError(null);
+  // Mengambil data awal dan membangun daftar kategori
+  Future<void> fetchInitialNews() async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      // Kita akan fetch berita dan source secara bersamaan untuk efisiensi
-      final results = await Future.wait([
-        // Panggilan untuk artikel
-        lowerCaseCategory == 'semua'
-            ? _newsService.getTopHeadlines(country: 'us')
-            : _newsService.getNewsByCategory(category: lowerCaseCategory),
+      // Panggil service untuk mendapatkan semua berita
+      final newsList = await _newsService.getNews();
+      _allNews = newsList;
 
-        // Panggilan untuk source berita sesuai kategori
-        _newsService.getSources(
-          category: lowerCaseCategory == 'semua' ? null : lowerCaseCategory,
-          language: 'en',
-        ),
-      ]);
+      // Ekstrak kategori unik dari daftar berita
+      final extractedCategories = _allNews.map((news) => news.category).toSet().toList();
 
-      // Hasil pertama adalah list artikel
-      final List<NewsArticle> news = results[0] as List<NewsArticle>;
-      _articlesByCategory[lowerCaseCategory] = news;
+      // Tambahkan 'Semua' sebagai kategori pertama dan urutkan
+      _categories = ['Semua', ...extractedCategories]..sort((a, b) {
+        if (a == 'Semua') return -1;
+        if (b == 'Semua') return 1;
+        return a.compareTo(b);
+      });
 
-      // Hasil kedua adalah list source
-      final List<ApiSource> sources =
-          (results[1] as List<ApiSource>).where((s) => s.url != null).take(20).toList();
-      _sourcesByCategory[lowerCaseCategory] = sources;
+      _selectedCategory = 'Semua';
     } catch (e) {
-      _setError(e.toString());
-      print('Error fetching data for $category: $e');
+      _errorMessage = e.toString(); // Simpan pesan error jika terjadi kesalahan
     } finally {
-      _isLoadingByCategory[lowerCaseCategory] = false;
-      notifyListeners();
+      _isLoading = false;
+      notifyListeners(); // Beri tahu UI bahwa data telah selesai dimuat
+    }
+  }
+
+  // Mengubah kategori yang dipilih
+  void selectCategory(String category) {
+    if (_selectedCategory != category) {
+      _selectedCategory = category;
+      notifyListeners(); // Beri tahu UI bahwa kategori telah berubah
     }
   }
 }

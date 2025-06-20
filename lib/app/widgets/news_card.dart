@@ -1,238 +1,121 @@
 import 'package:flutter/material.dart';
 import 'package:project_sicerdas/data/models/news_model.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
-import 'package:project_sicerdas/app/theme/app_spacing.dart';
-import 'package:project_sicerdas/app/theme/app_typography.dart';
 
-// Card besar untuk berita unggulan
-class FeaturedNewsCard extends StatelessWidget {
-  final NewsArticle article;
-  final VoidCallback onTap;
+class NewsCard extends StatelessWidget {
+  final NewsModel news; // Objek berita yang akan ditampilkan
 
-  const FeaturedNewsCard({super.key, required this.article, required this.onTap});
+  const NewsCard({super.key, required this.news});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias, //agar gambar tidak keluar dari border radius
-        child: Stack(children: [_buildImage(), _buildGradientOverlay(), _buildContent(context)]),
-      ),
-    );
-  }
-
-  Widget _buildImage() {
     return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: AppColors.backgroundGrey,
-      child:
-          article.urlToImage != null && article.urlToImage!.isNotEmpty
-              ? Image.network(
-                article.urlToImage!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-                },
-              )
-              : _buildPlaceholderImage(),
-    );
-  }
-
-  Widget _buildGradientOverlay() {
-    return Container(
+      padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
-          stops: const [0.5, 1.0],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    return Positioned(
-      bottom: 16,
-      left: 16,
-      right: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            article.title,
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.white,
-              fontWeight: AppTypography.bold,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          AppSpacing.vsTiny,
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  article.source.name,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.white,
-                    fontWeight: AppTypography.semiBold,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                article.formattedPublishedDate,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.white.withValues(alpha: 0.9),
-                ),
-              ),
-            ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPlaceholderImage() {
-    return const Center(child: Icon(Icons.article_outlined, size: 48, color: AppColors.grey));
-  }
-}
-
-// Card kecil untuk list berita biasa
-class RegularNewsCard extends StatelessWidget {
-  final NewsArticle article;
-  final VoidCallback onTap;
-  final VoidCallback? onBookmarkTap;
-
-  const RegularNewsCard({
-    super.key,
-    required this.article,
-    required this.onTap,
-    this.onBookmarkTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Menggunakan InkWell untuk efek ripple saat di-tap
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: AppSpacing.aPaddingSmall,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.lightGrey.withValues(alpha: 0.5)),
-        ),
-        child: Row(
-          children: [_buildImage(), AppSpacing.hsSmall, Expanded(child: _buildContent(context))],
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildImage(), // Menampilkan gambar berita
+          const SizedBox(width: 16),
+          Expanded(child: _buildContent(context)), // Menampilkan konten berita
+        ],
       ),
     );
   }
 
   Widget _buildImage() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 90,
-        height: 90,
-        color: AppColors.backgroundGrey,
-        child:
-            article.urlToImage != null && article.urlToImage!.isNotEmpty
-                ? Image.network(
-                  article.urlToImage!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                    );
-                  },
-                )
-                : _buildPlaceholderImage(),
+      borderRadius: BorderRadius.circular(12.0),
+      child: Image.network(
+        news.featuredImageUrl ?? '', // Beri string kosong jika URL null
+        fit: BoxFit.cover,
+        width: 110,
+        height: 120,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 110,
+            height: 120,
+            color: Colors.grey.shade200,
+            child: Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade400, size: 40),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 110,
+            height: 120,
+            color: Colors.grey.shade200,
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          );
+        },
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
     return SizedBox(
-      height: 90,
+      height: 120,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            article.title,
-            style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.bold),
+            news.title, // Judul berita
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, height: 1.3),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Text(
+            news.summary, // Ringkasan berita
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600, height: 1.3),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Row(
             children: [
-              if (article.category != null) ...[
-                _buildTag(article.category!, AppColors.secondary),
-                AppSpacing.vsSuperTiny,
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "${article.source.name} • ${article.formattedPublishedDate}",
-                      style: AppTypography.caption.copyWith(color: AppColors.textGrey),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              const Icon(Icons.remove_red_eye_outlined, size: 14, color: AppColors.textGrey),
+              const SizedBox(width: 4),
+              Text(
+                '${news.viewCount} kali dilihat', // Jumlah tampilan berita
+                style: const TextStyle(fontSize: 12, color: AppColors.textGrey),
+              ),
+              const Spacer(),
+              if (news.tags.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: Text(
+                    news.tags.first, // Menampilkan tag pertama
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (onBookmarkTap != null)
-                    InkWell(
-                      onTap: onBookmarkTap,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Icon(
-                          article.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                          size: 20,
-                          color: article.isBookmarked ? AppColors.secondary : AppColors.grey,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildTag(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text.toUpperCase(),
-        style: AppTypography.overline.copyWith(color: color, fontWeight: AppTypography.bold),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderImage() {
-    return const Center(child: Icon(Icons.article_outlined, size: 24, color: AppColors.grey));
   }
 }

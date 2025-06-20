@@ -8,9 +8,9 @@ import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
-  final NewsArticle article;
+  final NewsModel news; // Objek berita sebagai konteks percakapan
 
-  const ChatScreen({super.key, required this.article});
+  const ChatScreen({super.key, required this.news});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -21,11 +21,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
@@ -34,7 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage(ChatController controller) {
     if (_textController.text.trim().isNotEmpty) {
-      controller.sendMessage(_textController.text.trim());
+      controller.sendMessage(_textController.text.trim()); // Mengirim pesan pengguna
       _textController.clear();
       _scrollToBottom();
     }
@@ -55,7 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ChatController(article: widget.article),
+      create: (_) => ChatController(news: widget.news),
       child: Scaffold(
         backgroundColor: AppColors.backgroundGrey,
         appBar: AppBar(
@@ -63,10 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
           elevation: 1,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: AppColors.textBlack),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(), // Navigasi kembali
           ),
           title: Text(
-            widget.article.source.name,
+            'Tanya AI',
             style: AppTypography.headlineSmall.copyWith(color: AppColors.textBlack),
           ),
           centerTitle: true,
@@ -76,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _scrollToBottom();
             return Column(
               children: [
-                _buildArticleHeader(),
+                _buildArticleHeader(context), // Header berita sebagai konteks
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
@@ -84,16 +79,16 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: controller.messages.length,
                     itemBuilder: (context, index) {
                       final message = controller.messages[index];
-                      return _buildChatBubble(message);
+                      return _buildChatBubble(message, context); // Menampilkan chat bubble
                     },
                   ),
                 ),
                 if (controller.isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: LinearProgressIndicator(color: AppColors.primary),
+                    child: LinearProgressIndicator(color: AppColors.primary), // Indikator loading
                   ),
-                _buildMessageInput(controller),
+                _buildMessageInput(controller), // Input untuk pesan pengguna
               ],
             );
           },
@@ -102,53 +97,36 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildArticleHeader() {
-    final imageUrl = widget.article.urlToImage;
-
+  Widget _buildArticleHeader(BuildContext context) {
     return Container(
       padding: AppSpacing.aPaddingMedium,
-      margin: AppSpacing.aPaddingMedium,
+      margin: const EdgeInsets.all(16).copyWith(bottom: 0),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.grey.withValues(alpha: 0.1), spreadRadius: 1, blurRadius: 5),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
       ),
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            // Logika untuk menampilkan gambar atau placeholder
-            child:
-                (imageUrl != null && imageUrl.isNotEmpty)
-                    ? Image.network(
-                      imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (context, error, stackTrace) => Container(
-                            width: 60,
-                            height: 60,
-                            color: AppColors.backgroundGrey,
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 30,
-                              color: AppColors.textGrey,
-                            ),
-                          ),
-                    )
-                    : Container(
-                      width: 60,
-                      height: 60,
-                      color: AppColors.backgroundGrey,
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        size: 30,
-                        color: AppColors.textGrey,
-                      ),
+            child: Image.network(
+              widget.news.featuredImageUrl ?? '',
+              width: 70,
+              height: 70,
+              fit: BoxFit.cover,
+              errorBuilder:
+                  (context, error, stackTrace) => Container(
+                    width: 70,
+                    height: 70,
+                    color: AppColors.backgroundGrey,
+                    child: const Icon(
+                      Icons.image_not_supported,
+                      size: 30,
+                      color: AppColors.textGrey,
                     ),
+                  ),
+            ),
           ),
           AppSpacing.hsMedium,
           Expanded(
@@ -156,16 +134,9 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'SICERDAS',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  widget.article.title,
+                  widget.news.title,
                   style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -176,7 +147,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildChatBubble(ChatMessage message) {
+  Widget _buildChatBubble(ChatMessage message, BuildContext context) {
     final isUser = message.sender == MessageSender.user;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -185,7 +156,7 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.primary.withValues(alpha: 0.2) : AppColors.white,
+          color: isUser ? AppColors.primary.withOpacity(0.2) : AppColors.white,
           borderRadius: BorderRadius.circular(20).copyWith(
             bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(0),
             bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(20),
@@ -218,7 +189,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 minLines: 1,
                 maxLines: 5,
                 decoration: InputDecoration(
-                  hintText: 'Enter your message...',
+                  hintText: 'Ketik pesan Anda...',
                   hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textGrey),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
