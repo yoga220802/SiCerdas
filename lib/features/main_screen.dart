@@ -1,18 +1,13 @@
-/// file: lib/features/main_screen.dart
-///
-/// Layar utama yang mengatur Bottom Navigation Bar.
-/// Mengganti tab "Bookmark" dengan tab "Account" (Berita Saya) untuk manajemen berita.
-/// Memperbaiki ProviderNotFoundException dengan memastikan MyNewsController tersedia di konteks yang benar.
-
 import 'package:flutter/material.dart';
 import 'package:project_sicerdas/features/home/views/home_screen.dart';
-// import 'package:project_sicerdas/features/chat/views/chat_screen.dart'; // Jika ada layar chat global
-import 'package:project_sicerdas/features/profile/views/profile_screen.dart'; // Import ProfileScreen
-import 'package:project_sicerdas/features/my_news/views/my_news_screen.dart'; // Import MyNewsScreen
-import 'package:project_sicerdas/app/theme/app_colors.dart'; // Untuk warna icon
-import 'package:provider/provider.dart'; // Import Provider
-import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart'; // Import AuthController
-import 'package:project_sicerdas/features/my_news/controllers/my_news_controller.dart'; // Import MyNewsController
+import 'package:project_sicerdas/features/profile/views/profile_screen.dart';
+import 'package:project_sicerdas/features/my_news/views/my_news_screen.dart';
+import 'package:project_sicerdas/features/search/views/search_screen.dart';
+import 'package:project_sicerdas/app/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
+import 'package:project_sicerdas/features/my_news/controllers/my_news_controller.dart';
+import 'package:project_sicerdas/features/search/controllers/news_search_controller.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,40 +17,40 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // Index tab yang aktif
+  int _selectedIndex = 0;
 
   // Daftar widget untuk setiap tab
-  // Inisialisasi langsung di sini
   final List<Widget> _widgetOptions = <Widget>[
     const HomeScreen(),
-    const Text('Search Screen - Under Construction'), // Placeholder for Search
-    const MyNewsScreen(), // Tab Berita Saya
-    const ProfileScreen(), // Tab Profil
+    const SearchScreen(),
+    const MyNewsScreen(),
+    const ProfileScreen(),
   ];
 
+  late MyNewsController _myNewsController;
+  late AuthController _authController;
+  late NewsSearchController _newsSearchController;
+
   @override
-  void initState() {
-    super.initState();
-    // Tidak perlu lagi menginisialisasi _widgetOptions di sini
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inisialisasi controller menggunakan Provider
+    _myNewsController = Provider.of<MyNewsController>(context, listen: false);
+    _authController = Provider.of<AuthController>(context, listen: false);
+    _newsSearchController = Provider.of<NewsSearchController>(context, listen: false);
+
+    _myNewsController.setAuthController(_authController);
   }
 
+  // Mengatur aksi saat tab ditekan
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      // Khusus untuk MyNewsScreen, panggil fetchMyNews saat tab-nya dipilih
-      // untuk memastikan data selalu terbaru saat pengguna kembali ke tab ini.
       if (index == 2) {
-        // Index 2 adalah MyNewsScreen
-        // Pastikan MyNewsController sudah tersedia di context
-        // Perbaikan: MyNewsController sudah disediakan di MultiProvider di main.dart,
-        // sehingga langsung bisa diakses di sini.
-        final myNewsController = Provider.of<MyNewsController>(context, listen: false);
-        // Pastikan AuthController juga sudah tersedia dan diberikan ke MyNewsController
-        final authController = Provider.of<AuthController>(context, listen: false);
-
-        // Panggil setAuthController untuk memastikan MyNewsController memiliki referensi AuthController
-        myNewsController.setAuthController(authController);
-        myNewsController.fetchMyNews();
+        _myNewsController.fetchMyNews(); // Memuat berita pengguna
+      }
+      if (index == 1) {
+        _newsSearchController.fetchTrendingNews(); // Memuat berita trending
       }
     });
   }
@@ -77,22 +72,22 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.newspaper_outlined), // Icon untuk Berita Saya
+            icon: Icon(Icons.newspaper_outlined),
             activeIcon: Icon(Icons.newspaper),
-            label: 'My News', // Label baru
+            label: 'My News',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline), // Icon untuk akun/profil
+            icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Account',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: AppColors.primary, // Warna icon yang aktif
-        unselectedItemColor: AppColors.textGrey, // Warna icon yang tidak aktif
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textGrey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Pastikan item tidak bergerak saat dipilih
-        backgroundColor: AppColors.white, // Latar belakang navigation bar
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.white,
       ),
     );
   }

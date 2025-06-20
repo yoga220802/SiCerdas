@@ -1,19 +1,17 @@
 import 'package:intl/intl.dart';
 
 class NewsModel {
-  final String id; // ID unik berita
-  final String title; // Judul berita
-  final String? slug; // Slug untuk URL, opsional
-  final String summary; // Ringkasan berita
-  final String content; // Konten lengkap berita
-  final String? featuredImageUrl; // URL gambar unggulan, opsional
-  final String category; // Kategori utama berita
-  final DateTime publishedAt; // Tanggal dan waktu publikasi
-
-  // Properti tambahan
-  final List<String> tags; // Daftar tag berita
-  final int viewCount; // Jumlah tampilan berita
-  final bool isPublished; // Status publish/unpublish berita
+  final String id;
+  final String title;
+  final String? slug;
+  final String summary;
+  final String content;
+  final String? featuredImageUrl;
+  final String category;
+  final DateTime publishedAt;
+  final List<String> tags;
+  final int viewCount;
+  final bool isPublished;
 
   NewsModel({
     required this.id,
@@ -26,13 +24,13 @@ class NewsModel {
     required this.publishedAt,
     required this.tags,
     required this.viewCount,
-    this.isPublished = true, // Default true jika tidak disediakan
+    this.isPublished = true,
   });
 
   // Format tanggal untuk ditampilkan di UI
   String get publishedDateFormatted => DateFormat('d MMMM yyyy, HH:mm').format(publishedAt);
 
-  // Factory constructor untuk mem-parsing JSON dari API kustom
+  // Factory constructor untuk mem-parsing JSON dari API
   factory NewsModel.fromCustomApiJson(Map<String, dynamic> json) {
     return NewsModel(
       id: json['id'] ?? '',
@@ -40,7 +38,7 @@ class NewsModel {
       slug: json['slug'] ?? '',
       summary: json['summary'] ?? '',
       content: json['content'] ?? 'Konten tidak tersedia.',
-      featuredImageUrl: json['featured_image_url'], // Bisa null
+      featuredImageUrl: json['featured_image_url'],
       category: json['category'] ?? 'Umum',
       publishedAt:
           json['published_at'] != null
@@ -48,7 +46,7 @@ class NewsModel {
               : DateTime.now(),
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
       viewCount: json['view_count'] ?? 0,
-      isPublished: json['isPublished'] ?? true, // Status publish/unpublish
+      isPublished: json['is_published'] ?? true,
     );
   }
 
