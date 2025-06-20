@@ -131,7 +131,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (authController.userModel != null) {
           return const MainScreen();
         } else {
-          return const AuthScreen();
+          return const SplashScreen();
         }
       },
     );
