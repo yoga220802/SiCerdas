@@ -1,8 +1,18 @@
+/// file: lib/features/main_screen.dart
+///
+/// Layar utama yang mengatur Bottom Navigation Bar.
+/// Mengganti tab "Bookmark" dengan tab "Account" (Berita Saya) untuk manajemen berita.
+/// Memperbaiki ProviderNotFoundException dengan memastikan MyNewsController tersedia di konteks yang benar.
+
 import 'package:flutter/material.dart';
 import 'package:project_sicerdas/features/home/views/home_screen.dart';
-import 'package:project_sicerdas/features/chat/views/chat_screen.dart';
+// import 'package:project_sicerdas/features/chat/views/chat_screen.dart'; // Jika ada layar chat global
 import 'package:project_sicerdas/features/profile/views/profile_screen.dart'; // Import ProfileScreen
+import 'package:project_sicerdas/features/my_news/views/my_news_screen.dart'; // Import MyNewsScreen
 import 'package:project_sicerdas/app/theme/app_colors.dart'; // Untuk warna icon
+import 'package:provider/provider.dart'; // Import Provider
+import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart'; // Import AuthController
+import 'package:project_sicerdas/features/my_news/controllers/my_news_controller.dart'; // Import MyNewsController
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,17 +25,38 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // Index tab yang aktif
 
   // Daftar widget untuk setiap tab
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    // Contoh: ChatScreen(news: someDefaultNews), // Jika Anda ingin layar chat di tab terpisah
-    Text('Search Screen - Under Construction'), // Placeholder for Search
-    Text('Bookmark Screen - Under Construction'), // Placeholder for Bookmark
-    ProfileScreen(), // Menambahkan ProfileScreen
+  // Inisialisasi langsung di sini
+  final List<Widget> _widgetOptions = <Widget>[
+    const HomeScreen(),
+    const Text('Search Screen - Under Construction'), // Placeholder for Search
+    const MyNewsScreen(), // Tab Berita Saya
+    const ProfileScreen(), // Tab Profil
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Tidak perlu lagi menginisialisasi _widgetOptions di sini
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      // Khusus untuk MyNewsScreen, panggil fetchMyNews saat tab-nya dipilih
+      // untuk memastikan data selalu terbaru saat pengguna kembali ke tab ini.
+      if (index == 2) {
+        // Index 2 adalah MyNewsScreen
+        // Pastikan MyNewsController sudah tersedia di context
+        // Perbaikan: MyNewsController sudah disediakan di MultiProvider di main.dart,
+        // sehingga langsung bisa diakses di sini.
+        final myNewsController = Provider.of<MyNewsController>(context, listen: false);
+        // Pastikan AuthController juga sudah tersedia dan diberikan ke MyNewsController
+        final authController = Provider.of<AuthController>(context, listen: false);
+
+        // Panggil setAuthController untuk memastikan MyNewsController memiliki referensi AuthController
+        myNewsController.setAuthController(authController);
+        myNewsController.fetchMyNews();
+      }
     });
   }
 
@@ -46,9 +77,9 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_border_outlined),
-            activeIcon: Icon(Icons.bookmark),
-            label: 'Bookmark',
+            icon: Icon(Icons.newspaper_outlined), // Icon untuk Berita Saya
+            activeIcon: Icon(Icons.newspaper),
+            label: 'My News', // Label baru
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline), // Icon untuk akun/profil

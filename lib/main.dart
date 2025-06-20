@@ -8,6 +8,7 @@ import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart'
 import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
 import 'package:project_sicerdas/features/home/controllers/news_controller.dart';
 import 'package:project_sicerdas/features/main_screen.dart';
+import 'package:project_sicerdas/features/my_news/controllers/my_news_controller.dart';
 import 'package:project_sicerdas/features/onboarding/view/splash_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => NewsController()),
+        ChangeNotifierProvider(create: (_) => MyNewsController()),
       ],
       child: const MyApp(),
     ),
