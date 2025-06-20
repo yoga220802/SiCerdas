@@ -4,22 +4,23 @@ import 'package:project_sicerdas/app/theme/app_spacing.dart';
 
 class CustomTextField extends StatefulWidget {
   final String? title; // Judul di atas field, opsional
-  final String hintText;
-  final TextEditingController controller;
-  final bool obscureText;
-  final TextInputType keyboardType;
-  final String? Function(String?)? validator; // Untuk validasi form
-  final Widget? prefixIcon;
-  final Widget? suffixIcon; // Suffix icon kustom, jika bukan password
-  final bool isPassword; // Flag khusus untuk field password
-  final bool readOnly;
-  final VoidCallback? onTap;
-  final ValueChanged<String>? onChanged;
-  final List<TextInputFormatter>? inputFormatters;
-  final int? maxLength;
-  final int maxLines;
-  final FocusNode? focusNode;
-  final String? initialValue; // Jika tidak menggunakan controller
+  final String hintText; // Placeholder untuk field
+  final TextEditingController controller; // Controller untuk mengelola input
+  final bool obscureText; // Menentukan apakah teks harus disembunyikan
+  final TextInputType keyboardType; // Jenis keyboard yang digunakan
+  final String? Function(String?)? validator; // Fungsi validasi untuk form
+  final Widget? prefixIcon; // Ikon di awal field
+  final Widget? suffixIcon; // Ikon di akhir field (kustom, jika bukan password)
+  final bool isPassword; // Menentukan apakah field adalah password
+  final bool readOnly; // Menentukan apakah field hanya untuk dibaca
+  final VoidCallback? onTap; // Callback saat field ditekan
+  final ValueChanged<String>? onChanged; // Callback saat teks berubah
+  final ValueChanged<String>? onSubmitted; // Callback saat teks dikirim
+  final List<TextInputFormatter>? inputFormatters; // Format input
+  final int? maxLength; // Panjang maksimum teks
+  final int maxLines; // Jumlah baris maksimum
+  final FocusNode? focusNode; // Node fokus untuk field
+  final String? initialValue; // Nilai awal jika tidak menggunakan controller
 
   const CustomTextField({
     super.key,
@@ -35,6 +36,7 @@ class CustomTextField extends StatefulWidget {
     this.readOnly = false,
     this.onTap,
     this.onChanged,
+    this.onSubmitted,
     this.inputFormatters,
     this.maxLength,
     this.maxLines = 1,
@@ -81,6 +83,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           readOnly: widget.readOnly,
           onTap: widget.onTap,
           onChanged: widget.onChanged,
+          onFieldSubmitted: widget.onSubmitted, // Meneruskan onSubmitted ke TextFormField
           inputFormatters: widget.inputFormatters,
           maxLength: widget.maxLength,
           maxLines: widget.isPassword ? 1 : widget.maxLines, // Password selalu 1 baris
@@ -96,7 +99,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         _currentObscureText
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withAlpha(153), // Transparansi 60%
                       ),
                       onPressed: () {
                         setState(() {

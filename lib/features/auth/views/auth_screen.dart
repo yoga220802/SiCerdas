@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
-import 'package:project_sicerdas/app/widgets/custom_button.dart';
 import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
 import 'package:project_sicerdas/features/auth/views/forgot_password_screen.dart';
 import 'package:project_sicerdas/features/auth/widgets/login_form.dart';
 import 'package:project_sicerdas/features/auth/widgets/register_form.dart';
+import 'package:project_sicerdas/features/home/views/home_screen.dart';
+import 'package:project_sicerdas/features/main_screen.dart';
 import 'package:provider/provider.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -21,7 +22,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late AnimationController _fadeAnimController;
   late Animation<double> _fadeAnimation;
 
-  // Form controllers
   final TextEditingController _loginEmailController = TextEditingController();
   final TextEditingController _loginPasswordController = TextEditingController();
 
@@ -30,7 +30,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   final TextEditingController _registerPasswordController = TextEditingController();
   final TextEditingController _registerConfirmPasswordController = TextEditingController();
 
-  // Focus Nodes untuk setiap field agar bisa dikelola fokusnya
   final FocusNode _loginEmailFocus = FocusNode();
   final FocusNode _loginPasswordFocus = FocusNode();
   final FocusNode _registerUsernameFocus = FocusNode();
@@ -39,12 +38,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   final FocusNode _registerConfirmPasswordFocus = FocusNode();
 
   bool _isRegisterSheetVisible = false;
-  late AuthController _authController;
 
   @override
   void initState() {
     super.initState();
-    _authController = AuthController();
 
     _fadeAnimController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -60,7 +57,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   void _onDragChanged() {
     final sheetPosition = _dragController.size;
     if (mounted) {
-      // Hanya update state jika memang ada perubahan visibilitas
       bool shouldBeVisible = sheetPosition > 0.5;
       if (shouldBeVisible != _isRegisterSheetVisible) {
         setState(() => _isRegisterSheetVisible = shouldBeVisible);
@@ -74,7 +70,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   void _showRegisterSheet() {
-    // Coba unfocus dengan sedikit delay untuk memberi waktu UI stabil
     Future.delayed(Duration.zero, () {
       if (mounted) FocusScope.of(context).unfocus();
     });
@@ -100,43 +95,64 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleLogin(AuthController authController) async {
     if (mounted) FocusScope.of(context).unfocus();
 
-    await _authController.loginUser(
+    bool loggedIn = await authController.loginUser(
       email: _loginEmailController.text,
       password: _loginPasswordController.text,
     );
 
-    if (mounted && _authController.errorMessage == null && !_authController.isLoading) {
-      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-    } else if (mounted && _authController.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_authController.errorMessage!), backgroundColor: AppColors.error),
-      );
+    if (mounted) {
+      if (loggedIn) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
+      } else if (authController.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authController.errorMessage!), backgroundColor: AppColors.error),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Gagal login. Periksa kembali email dan password Anda."),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
-  Future<void> _handleRegister() async {
+  Future<void> _handleRegister(AuthController authController) async {
     if (mounted) FocusScope.of(context).unfocus();
 
-    await _authController.registerUser(
+    bool registered = await authController.registerUser(
       username: _registerUsernameController.text,
       email: _registerEmailController.text,
       password: _registerPasswordController.text,
     );
-    if (mounted && _authController.errorMessage == null && !_authController.isLoading) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Registrasi berhasil! Silakan login."),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      _hideRegisterSheet();
-    } else if (mounted && _authController.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_authController.errorMessage!), backgroundColor: AppColors.error),
-      );
+    if (mounted) {
+      if (registered) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Registrasi berhasil! Silakan login."),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        _loginEmailController.text =
+            _registerEmailController.text; // Isi email login dengan email register
+        _loginPasswordController.clear(); // Kosongkan password
+        _hideRegisterSheet();
+      } else if (authController.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authController.errorMessage!), backgroundColor: AppColors.error),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Gagal melakukan registrasi. Coba lagi."),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -158,17 +174,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     _registerPasswordFocus.dispose();
     _registerConfirmPasswordFocus.dispose();
 
-    _authController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return ChangeNotifierProvider.value(
-      value: _authController,
+    return ChangeNotifierProvider(
+      create: (_) => AuthController(),
       child: Consumer<AuthController>(
-        builder: (context, controller, child) {
+        builder: (context, authController, child) {
           return Scaffold(
             resizeToAvoidBottomInset: false,
             backgroundColor: AppColors.secondary,
@@ -182,7 +197,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     child: SingleChildScrollView(
                       padding: EdgeInsets.only(bottom: _isRegisterSheetVisible ? 0 : 80.0),
                       child: SizedBox(
-                        height: size.height,
+                        height:
+                            size.height -
+                            MediaQuery.of(context).padding.top -
+                            MediaQuery.of(context).padding.bottom,
                         child: Padding(
                           padding: AppSpacing.hPaddingLarge,
                           child: Column(
@@ -213,14 +231,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                 passwordController: _loginPasswordController,
                                 emailFocusNode: _loginEmailFocus,
                                 passwordFocusNode: _loginPasswordFocus,
-                                onLoginPressed: _handleLogin,
+                                onLoginPressed:
+                                    () => _handleLogin(authController), // Kirim authController
                                 onForgotPasswordPressed: _navigateToForgotPassword,
-                                isLoading: controller.isLoading,
+                                isLoading: authController.isLoading,
                               ),
                               AppSpacing.vsMedium,
-                              _buildRegisterLink(),
+                              _buildRegisterLink(authController),
                               AppSpacing.vsLarge,
-                              _buildSocialLoginButtons(),
+                              _buildSocialLoginButtons(authController),
                               const Spacer(flex: 2),
                             ],
                           ),
@@ -228,7 +247,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  _buildRegisterSheet(controller.isLoading),
+                  _buildRegisterSheet(authController),
                 ],
               ),
             ),
@@ -238,7 +257,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildRegisterLink() {
+  Widget _buildRegisterLink(AuthController authController) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -247,7 +266,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           style: AppTypography.bodyMedium.copyWith(color: AppColors.textBlack),
         ),
         GestureDetector(
-          onTap: _authController.isLoading ? null : _showRegisterSheet,
+          onTap: authController.isLoading ? null : _showRegisterSheet,
           child: Text(
             'Register',
             style: AppTypography.bodyMedium.copyWith(
@@ -260,19 +279,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSocialLoginButtons() {
+  Widget _buildSocialLoginButtons(AuthController authController) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildSocialButton(Icons.g_mobiledata_outlined, 'Google', () {
           /* TODO: Google login */
-        }),
+        }, authController),
         _buildSocialButton(Icons.facebook_outlined, 'Facebook', () {
           /* TODO: Facebook login */
-        }),
+        }, authController),
         _buildSocialButton(Icons.apple_outlined, 'Apple', () {
           /* TODO: Apple login */
-        }),
+        }, authController),
       ],
     );
   }
@@ -280,11 +299,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Widget _buildSocialButton(
     IconData icon,
     String label,
-    VoidCallback onPressed, {
+    VoidCallback onPressed,
+    dynamic authController, {
     bool isRegister = false,
   }) {
     return GestureDetector(
-      onTap: _authController.isLoading ? null : onPressed,
+      onTap: authController.isLoading ? null : onPressed,
       child: Container(
         width: 55,
         height: 55,
@@ -298,7 +318,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildRegisterSheet(bool isLoading) {
+  Widget _buildRegisterSheet(AuthController authController) {
     return DraggableScrollableSheet(
       initialChildSize: 0.08,
       minChildSize: 0.08,
@@ -342,8 +362,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             emailFocusNode: _registerEmailFocus,
                             passwordFocusNode: _registerPasswordFocus,
                             confirmPasswordFocusNode: _registerConfirmPasswordFocus,
-                            onRegisterPressed: _handleRegister,
-                            isLoading: isLoading,
+                            onRegisterPressed: () => _handleRegister(authController),
+                            isLoading: authController.isLoading,
                           )
                           : const SizedBox(height: 200),
                 ),
@@ -358,7 +378,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                             style: AppTypography.bodyMedium.copyWith(color: AppColors.textGrey),
                           ),
                           GestureDetector(
-                            onTap: isLoading ? null : _hideRegisterSheet,
+                            onTap: authController.isLoading ? null : _hideRegisterSheet,
                             child: Text(
                               'Login',
                               style: AppTypography.bodyMedium.copyWith(
@@ -370,7 +390,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                         ],
                       ),
                       AppSpacing.vsLarge,
-                      _buildSocialLoginButtons(),
+                      _buildSocialLoginButtons(authController),
                       AppSpacing.vsXLarge,
                     ]
                     : (!_isRegisterSheetVisible &&
