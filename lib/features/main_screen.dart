@@ -1,32 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:project_sicerdas/features/home/views/home_screen.dart';
-import 'package:project_sicerdas/app/theme/app_colors.dart';
+import 'package:project_sicerdas/features/chat/views/chat_screen.dart';
+import 'package:project_sicerdas/features/profile/views/profile_screen.dart'; // Import ProfileScreen
+import 'package:project_sicerdas/app/theme/app_colors.dart'; // Untuk warna icon
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _MainScreenView();
-  }
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenView extends StatefulWidget {
-  const _MainScreenView();
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0; // Index tab yang aktif
 
-  @override
-  State<_MainScreenView> createState() => _MainScreenViewState();
-}
-
-class _MainScreenViewState extends State<_MainScreenView> {
-  int _selectedIndex = 0;
-
-  // Daftar halaman/screen untuk setiap tab
+  // Daftar widget untuk setiap tab
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
-    // SearchScreen(),
-    // BookmarkScreen(),
-    // ProfileScreen(),
+    // Contoh: ChatScreen(news: someDefaultNews), // Jika Anda ingin layar chat di tab terpisah
+    Text('Search Screen - Under Construction'), // Placeholder for Search
+    Text('Bookmark Screen - Under Construction'), // Placeholder for Bookmark
+    ProfileScreen(), // Menambahkan ProfileScreen
   ];
 
   void _onItemTapped(int index) {
@@ -38,40 +32,36 @@ class _MainScreenViewState extends State<_MainScreenView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
+      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Beranda',
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search_rounded),
-            label: 'Cari',
+            icon: Icon(Icons.search),
+            activeIcon: Icon(Icons.search),
+            label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_border_rounded),
-            activeIcon: Icon(Icons.bookmark_rounded),
+            icon: Icon(Icons.bookmark_border_outlined),
+            activeIcon: Icon(Icons.bookmark),
             label: 'Bookmark',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profil',
+            icon: Icon(Icons.person_outline), // Icon untuk akun/profil
+            activeIcon: Icon(Icons.person),
+            label: 'Account',
           ),
         ],
         currentIndex: _selectedIndex,
+        selectedItemColor: AppColors.primary, // Warna icon yang aktif
+        unselectedItemColor: AppColors.textGrey, // Warna icon yang tidak aktif
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textGrey.withValues(alpha: 0.8),
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        showUnselectedLabels: true,
-        elevation: 8.0,
+        type: BottomNavigationBarType.fixed, // Pastikan item tidak bergerak saat dipilih
+        backgroundColor: AppColors.white, // Latar belakang navigation bar
       ),
     );
   }

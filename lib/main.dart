@@ -10,29 +10,26 @@ import 'package:project_sicerdas/features/home/controllers/news_controller.dart'
 import 'package:project_sicerdas/features/main_screen.dart';
 import 'package:project_sicerdas/features/onboarding/view/splash_screen.dart';
 import 'package:provider/provider.dart';
+
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env"); // Memuat file konfigurasi lingkungan
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  ); // Inisialisasi Firebase
-
-  await initializeDateFormatting('id_ID', null); // Inisialisasi format tanggal lokal
+  await dotenv.load(fileName: ".env");
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeDateFormatting('id_ID', null);
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]); // Mengatur orientasi layar ke potret
+  ]);
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthController()), // Provider untuk autentikasi
-        ChangeNotifierProvider(create: (_) => NewsController()), // Provider untuk berita
+        ChangeNotifierProvider(create: (_) => AuthController()),
+        ChangeNotifierProvider(create: (_) => NewsController()),
       ],
       child: const MyApp(),
     ),
@@ -47,13 +44,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SICERDAS',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Menggunakan tema aplikasi
-      home: const AuthWrapper(), // Menggunakan AuthWrapper sebagai halaman awal
+      theme: AppTheme.lightTheme,
+      home: const AuthWrapper(),
     );
   }
 }
 
-// AuthWrapper mengarahkan pengguna ke layar yang sesuai berdasarkan status autentikasi
+/// AuthWrapper mengarahkan pengguna ke layar yang sesuai berdasarkan status autentikasi.
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -62,57 +59,68 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _isAuthLoading = true; // Flag untuk menunjukkan status loading autentikasi
+  bool _isAuthLoading = true;
+  late AuthController _authController;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authController = Provider.of<AuthController>(context, listen: false);
+    _authController = Provider.of<AuthController>(context, listen: false);
+    _authController.addListener(_onAuthChange);
 
-      authController.addListener(_onAuthChange); // Menambahkan listener untuk perubahan autentikasi
-
-      if (authController.currentUser != null) {
-        authController.getCurrentUser(); // Memuat data pengguna jika sudah login
-      } else {
-        if (mounted) {
-          setState(() {
-            _isAuthLoading = false; // Mengatur status loading ke false jika tidak ada pengguna
-          });
-        }
+    if (_authController.currentUser != null) {
+      _authController.getCurrentUser();
+    } else {
+      if (mounted) {
+        setState(() {
+          _isAuthLoading = false;
+        });
       }
-    });
+    }
   }
 
   void _onAuthChange() {
     if (_isAuthLoading && mounted) {
       setState(() {
-        _isAuthLoading = false; // Mengatur status loading ke false setelah autentikasi selesai
+        _isAuthLoading = false;
       });
+    }
+
+    if (_authController.userModel != null) {
+      if (ModalRoute.of(context)?.settings.name != '/') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false,
+        );
+      }
+    } else {
+      if (ModalRoute.of(context)?.settings.name != '/') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 
   @override
   void dispose() {
-    Provider.of<AuthController>(
-      context,
-      listen: false,
-    ).removeListener(_onAuthChange); // Menghapus listener
+    _authController.removeListener(_onAuthChange);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isAuthLoading) {
-      return const SplashScreen(); // Menampilkan SplashScreen selama autentikasi berlangsung
+      return const SplashScreen();
     }
 
     return Consumer<AuthController>(
       builder: (context, authController, child) {
         if (authController.userModel != null) {
-          return const MainScreen(); // Mengarahkan ke MainScreen jika pengguna sudah login
+          return const MainScreen();
         } else {
-          return const AuthScreen(); // Mengarahkan ke AuthScreen jika pengguna belum login
+          return const AuthScreen();
         }
       },
     );

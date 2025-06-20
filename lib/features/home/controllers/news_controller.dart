@@ -6,19 +6,19 @@ class NewsController extends ChangeNotifier {
   final NewsService _newsService = NewsService();
 
   // State
-  bool _isLoading = true; // Status loading data
-  String? _errorMessage; // Pesan error jika terjadi kesalahan
-  List<NewsModel> _allNews = []; // Semua berita yang diambil
-  List<String> _categories = []; // Daftar kategori berita
-  String _selectedCategory = 'Semua'; // Kategori yang dipilih
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<NewsModel> _allNews = [];
+  List<String> _categories = [];
+  String _selectedCategory = 'Semua';
 
-  // Getters untuk diakses oleh UI
+  // Getters untuk UI
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<String> get categories => _categories;
   String get selectedCategory => _selectedCategory;
 
-  // Getter untuk berita yang sudah difilter berdasarkan kategori
+  // Berita yang difilter berdasarkan kategori
   List<NewsModel> get filteredNews {
     if (_selectedCategory == 'Semua') {
       return _allNews;
@@ -26,10 +26,8 @@ class NewsController extends ChangeNotifier {
     return _allNews.where((news) => news.category == _selectedCategory).toList();
   }
 
-  // Constructor untuk langsung memuat data saat controller dibuat
-  NewsController() {
-    fetchInitialNews();
-  }
+  // Constructor tanpa pemanggilan fetchInitialNews()
+  NewsController();
 
   // Mengambil data awal dan membangun daftar kategori
   Future<void> fetchInitialNews() async {
@@ -38,11 +36,11 @@ class NewsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Panggil service untuk mendapatkan semua berita
+      // Ambil semua berita dari service
       final newsList = await _newsService.getNews();
       _allNews = newsList;
 
-      // Ekstrak kategori unik dari daftar berita
+      // Ekstrak kategori unik dari berita
       final extractedCategories = _allNews.map((news) => news.category).toSet().toList();
 
       // Tambahkan 'Semua' sebagai kategori pertama dan urutkan
@@ -54,10 +52,11 @@ class NewsController extends ChangeNotifier {
 
       _selectedCategory = 'Semua';
     } catch (e) {
-      _errorMessage = e.toString(); // Simpan pesan error jika terjadi kesalahan
+      _errorMessage = e.toString();
+      print('Error di NewsController: $_errorMessage');
     } finally {
       _isLoading = false;
-      notifyListeners(); // Beri tahu UI bahwa data telah selesai dimuat
+      notifyListeners();
     }
   }
 
@@ -65,7 +64,7 @@ class NewsController extends ChangeNotifier {
   void selectCategory(String category) {
     if (_selectedCategory != category) {
       _selectedCategory = category;
-      notifyListeners(); // Beri tahu UI bahwa kategori telah berubah
+      notifyListeners();
     }
   }
 }
