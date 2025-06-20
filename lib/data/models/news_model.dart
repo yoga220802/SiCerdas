@@ -1,153 +1,81 @@
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
-@immutable
-class NewsArticle {
-  final String? id;
-  final Source source;
-  final String? author;
+class NewsModel {
+  final String id;
   final String title;
-  final String? description;
-  final String url;
-  final String? urlToImage;
+  final String? slug;
+  final String summary;
+  final String content;
+  final String? featuredImageUrl;
+  final String category;
   final DateTime publishedAt;
-  final String? content;
-  final String? category;
-  final bool isBookmarked;
+  final List<String> tags;
+  final int viewCount;
+  final bool isPublished;
 
-  const NewsArticle({
-    this.id,
-    required this.source,
-    this.author,
+  NewsModel({
+    required this.id,
     required this.title,
-    this.description,
-    required this.url,
-    this.urlToImage,
+    this.slug,
+    required this.summary,
+    required this.content,
+    this.featuredImageUrl,
+    required this.category,
     required this.publishedAt,
-    this.content,
-    this.category,
-    this.isBookmarked = false,
+    required this.tags,
+    required this.viewCount,
+    this.isPublished = true,
   });
 
-  String get uniqueId {
-    return sha1.convert(utf8.encode(url)).toString();
-  }
+  // Format tanggal untuk ditampilkan di UI
+  String get publishedDateFormatted => DateFormat('d MMMM yyyy, HH:mm').format(publishedAt);
 
-  factory NewsArticle.fromNewsApi(Map<String, dynamic> json) {
-    return NewsArticle(
-      source: Source.fromJson(json['source'] as Map<String, dynamic>),
-      author: json['author'] as String?,
-      title: json['title'] as String? ?? 'No Title',
-      description: json['description'] as String?,
-      url: json['url'] as String? ?? '',
-      urlToImage: json['urlToImage'] as String?,
-      publishedAt: DateTime.tryParse(json['publishedAt'] as String? ?? '') ?? DateTime.now(),
-      content: json['content'] as String?,
-      category: json['category'] as String?,
+  // Factory constructor untuk mem-parsing JSON dari API
+  factory NewsModel.fromCustomApiJson(Map<String, dynamic> json) {
+    return NewsModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Tanpa Judul',
+      slug: json['slug'] ?? '',
+      summary: json['summary'] ?? '',
+      content: json['content'] ?? 'Konten tidak tersedia.',
+      featuredImageUrl: json['featured_image_url'],
+      category: json['category'] ?? 'Umum',
+      publishedAt:
+          json['published_at'] != null
+              ? DateTime.parse(json['published_at']).toLocal()
+              : DateTime.now(),
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
+      viewCount: json['view_count'] ?? 0,
+      isPublished: json['is_published'] ?? true,
     );
   }
 
-  factory NewsArticle.fromJson(Map<String, dynamic> json) {
-    return NewsArticle(
-      id: json['id'] as String?,
-      source: Source.fromJson(json['source'] as Map<String, dynamic>),
-      author: json['author'] as String?,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      url: json['url'] as String,
-      urlToImage: json['urlToImage'] as String?,
-      publishedAt: DateTime.parse(json['publishedAt'] as String),
-      content: json['content'] as String?,
-      category: json['category'] as String?,
-      isBookmarked: json['isBookmarked'] as bool? ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id ?? uniqueId,
-      'source': source.toJson(),
-      'author': author,
-      'title': title,
-      'description': description,
-      'url': url,
-      'urlToImage': urlToImage,
-      'publishedAt': publishedAt.toIso8601String(),
-      'content': content,
-      'category': category,
-      'isBookmarked': isBookmarked,
-    };
-  }
-
-  NewsArticle copyWith({
+  // Metode copyWith untuk membuat instance baru dengan perubahan
+  NewsModel copyWith({
     String? id,
-    Source? source,
-    String? author,
     String? title,
-    String? description,
-    String? url,
-    String? urlToImage,
-    DateTime? publishedAt,
+    String? slug,
+    String? summary,
     String? content,
+    String? featuredImageUrl,
     String? category,
-    bool? isBookmarked,
+    DateTime? publishedAt,
+    List<String>? tags,
+    int? viewCount,
+    bool? isPublished,
   }) {
-    return NewsArticle(
+    return NewsModel(
       id: id ?? this.id,
-      source: source ?? this.source,
-      author: author ?? this.author,
       title: title ?? this.title,
-      description: description ?? this.description,
-      url: url ?? this.url,
-      urlToImage: urlToImage ?? this.urlToImage,
-      publishedAt: publishedAt ?? this.publishedAt,
+      slug: slug ?? this.slug,
+      summary: summary ?? this.summary,
       content: content ?? this.content,
+      featuredImageUrl: featuredImageUrl ?? this.featuredImageUrl,
       category: category ?? this.category,
-      isBookmarked: isBookmarked ?? this.isBookmarked,
+      publishedAt: publishedAt ?? this.publishedAt,
+      tags: tags ?? this.tags,
+      viewCount: viewCount ?? this.viewCount,
+      isPublished: isPublished ?? this.isPublished,
     );
   }
-
-  String get formattedPublishedDate {
-    return DateFormat('d MMM yyyy', 'id_ID').format(publishedAt);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is NewsArticle && runtimeType == other.runtimeType && uniqueId == other.uniqueId;
-
-  @override
-  int get hashCode => uniqueId.hashCode;
-}
-
-@immutable
-class Source {
-  final String? id;
-  final String name;
-
-  const Source({this.id, required this.name});
-
-  factory Source.fromJson(Map<String, dynamic> json) {
-    return Source(id: json['id'] as String?, name: json['name'] as String? ?? 'Unknown Source');
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name};
-  }
-}
-
-class TrendingTopic {
-  final String name;
-  final String count;
-
-  TrendingTopic({required this.name, required this.count});
-}
-
-class NewsSource {
-  final String id;
-  final String name;
-
-  NewsSource({required this.id, required this.name});
 }

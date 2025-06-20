@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:project_sicerdas/app/widgets/app_header.dart';
+import 'package:project_sicerdas/app/widgets/news_card.dart';
+import 'package:project_sicerdas/data/models/news_model.dart';
+import 'package:project_sicerdas/features/home/controllers/news_controller.dart';
+import 'package:project_sicerdas/features/home/views/news_detail_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
-import 'package:project_sicerdas/app/theme/app_typography.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
-import 'package:project_sicerdas/app/widgets/custom_button.dart';
+import 'package:project_sicerdas/app/theme/app_typography.dart';
 import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
 import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
-import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,75 +19,132 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<void> _handleLogout() async {
-    final authController = Provider.of<AuthController>(context, listen: false);
+  late NewsController _newsController;
 
-    await authController.logoutUser();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _newsController = Provider.of<NewsController>(context, listen: false);
+      _newsController.fetchInitialNews();
+    });
+  }
 
-    if (mounted) {
-      // Selalu cek mounted setelah async call
-      // Navigasi ke AuthScreen dan hapus semua route sebelumnya
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const AuthScreen()),
-        (Route<dynamic> route) => false, // Hapus semua route sebelumnya dari stack
-      );
-    }
+  Future<void> _onRefresh() async {
+    await _newsController.fetchInitialNews();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    return Consumer<NewsController>(
+      builder: (context, controller, child) {
+        if (controller.isLoading && controller.categories.isEmpty) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Beranda Sicerdas',
-          style: AppTypography.headlineMedium,
-          selectionColor: AppColors.black,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.black),
-            onPressed: _handleLogout,
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
-      body: Center(
-        child: Padding(
-          padding: AppSpacing.aPaddingLarge,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.home_work_outlined, size: 80, color: theme.colorScheme.primary),
-              AppSpacing.vsMedium,
-              Text(
-                'Selamat Datang di Beranda!',
-                // 'Selamat Datang, ${authController.currentUser?.displayName ?? 'Pengguna'}!',
-                style: AppTypography.headlineSmall.copyWith(color: theme.colorScheme.primary),
-                textAlign: TextAlign.center,
+        if (controller.errorMessage != null) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Gagal memuat berita.\n\nError: ${controller.errorMessage}'),
               ),
-              AppSpacing.vsSmall,
-              Text(
-                'Ini adalah halaman utama aplikasi Sicerdas setelah Anda berhasil login. Konten berita akan ditampilkan di sini.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          );
+        }
+
+        return DefaultTabController(
+          length: controller.categories.length,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const AppHeader(),
+              bottom: TabBar(
+                isScrollable: true,
+                indicatorColor: AppColors.primary,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textGrey,
+                tabs: controller.categories.map((category) => Tab(text: category)).toList(),
+                onTap: (index) {
+                  controller.selectCategory(controller.categories[index]);
+                },
+              ),
+            ),
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: AppSpacing.aPaddingMedium.copyWith(bottom: 0),
+                  child: Consumer<AuthController>(
+                    builder: (context, authController, _) {
+                      final userName = authController.userModel?.displayName ?? 'Pengguna';
+                      return Text(
+                        'Selamat datang, $userName!',
+                        style: AppTypography.headlineSmall.copyWith(color: AppColors.textBlack),
+                      );
+                    },
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              // TODO: Tambahkan UI untuk menampilkan daftar berita
-              AppSpacing.vsLarge,
-              // Tombol logout alternatif di body jika diperlukan
-              CustomButton(
-                text: "Logout dari Sini",
-                onPressed: _handleLogout,
-                type: ButtonType.secondary,
-              ),
-            ],
+                AppSpacing.vsMedium,
+                Expanded(
+                  child: TabBarView(
+                    children:
+                        controller.categories.map((category) {
+                          final newsList =
+                              (category == 'Semua')
+                                  ? controller.filteredNews
+                                  : controller.filteredNews
+                                      .where((news) => news.category == category)
+                                      .toList();
+
+                          return RefreshIndicator(
+                            onRefresh: _onRefresh,
+                            color: AppColors.primary,
+                            child:
+                                newsList.isEmpty
+                                    ? ListView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        AppSpacing.vsXXLarge,
+                                        Text(
+                                          'Tidak ada berita di kategori "$category"',
+                                          textAlign: TextAlign.center,
+                                          style: AppTypography.bodyMedium.copyWith(
+                                            color: AppColors.textGrey,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    : ListView.builder(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.all(16.0),
+                                      itemCount: newsList.length,
+                                      itemBuilder: (context, index) {
+                                        final news = newsList[index];
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => NewsDetailScreen(news: news),
+                                              ),
+                                            );
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(bottom: 16.0),
+                                            child: NewsCard(news: news),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

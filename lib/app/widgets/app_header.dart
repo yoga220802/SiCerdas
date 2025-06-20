@@ -1,49 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
+import 'package:project_sicerdas/features/auth/views/auth_screen.dart';
 import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/theme/app_typography.dart';
-import 'package:project_sicerdas/app/widgets/custom_text_field.dart';
 
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
-  final TextEditingController? searchController;
-  final ValueChanged<String>? onSearchChanged;
-  final VoidCallback? onSearchTap;
-
-  const AppHeader({super.key, this.searchController, this.onSearchChanged, this.onSearchTap});
+  const AppHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final authController = Provider.of<AuthController>(context, listen: false);
 
     return SafeArea(
       child: Container(
-        padding: AppSpacing.aPaddingMedium,
+        height: 50,
+        padding: AppSpacing.hPaddingMedium,
         color: AppColors.white,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Image.asset('assets/images/logo.png', height: 40, width: 40),
-                AppSpacing.hsSmall,
-                Text(
-                  'SICERDAS',
-                  style: AppTypography.headlineMedium.copyWith(color: AppColors.primary),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.notifications_none_outlined, color: AppColors.textGrey),
-                ),
-              ],
+            Image.asset('assets/images/logo.png', height: 40, width: 40),
+            AppSpacing.hsSmall,
+            Text(
+              'SICERDAS',
+              style: AppTypography.headlineMedium.copyWith(color: AppColors.primary),
             ),
-            AppSpacing.vsMedium,
-            CustomTextField(
-              controller: searchController ?? TextEditingController(),
-              onChanged: onSearchChanged,
-              onTap: onSearchTap,
-              hintText: 'Cari berita, topik, atau sumber...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textGrey),
+            const Spacer(),
+            IconButton(
+              tooltip: 'Logout',
+              icon: const Icon(Icons.logout_outlined, color: AppColors.primary),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext dialogContext) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('Konfirmasi Logout'),
+                      content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('Batal'),
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop();
+                          },
+                        ),
+                        TextButton(
+                          child: Text('Logout', style: TextStyle(color: AppColors.error)),
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            await authController.logoutUser();
+                            if (context.mounted) {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                                (Route<dynamic> route) => false,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
@@ -52,5 +71,5 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(170.0);
+  Size get preferredSize => const Size.fromHeight(70);
 }

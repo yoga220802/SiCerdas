@@ -4,7 +4,7 @@ import 'package:project_sicerdas/app/theme/app_colors.dart';
 import 'package:project_sicerdas/app/theme/app_spacing.dart';
 import 'package:project_sicerdas/app/widgets/floating_circle.dart';
 import 'package:project_sicerdas/features/auth/controllers/auth_controller.dart';
-import 'package:project_sicerdas/features/home/views/home_screen.dart';
+import 'package:project_sicerdas/features/main_screen.dart';
 import 'package:project_sicerdas/features/onboarding/view/get_started_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         print("User is signed in: ${authController.currentUser!.uid}");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       } else {
         print("No user signed in.");

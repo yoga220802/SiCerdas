@@ -7,6 +7,7 @@ import 'package:project_sicerdas/features/auth/views/forgot_password_screen.dart
 import 'package:project_sicerdas/features/auth/widgets/login_form.dart';
 import 'package:project_sicerdas/features/auth/widgets/register_form.dart';
 import 'package:project_sicerdas/features/home/views/home_screen.dart';
+import 'package:project_sicerdas/features/main_screen.dart';
 import 'package:provider/provider.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -104,7 +105,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
     if (mounted) {
       if (loggedIn) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
       } else if (authController.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(authController.errorMessage!), backgroundColor: AppColors.error),
